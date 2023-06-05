@@ -31,28 +31,8 @@ npm install animal-orm
 Here's a simple example of how to use the `animal-orm` module:
 
 ```typescript
-import { Model, Field, ForeignKeyField, ManyToManyField } from 'animal-orm';
-import * as z from 'zod';
-import { query as q } from 'faunadb';
-
-export const User = new Model('User', {
-  name: new Field(z.string()),
-  email: new Field(z.string().email()),
-  password: new Field(z.string(), {hidden: true})
-});
-
-export const Pet = new Model('Pet', {
-  name: new Field(z.string()),
-  owner: new Ref(User, {reverse:"pets"}) //Sets up the reverse index
-});
-
-export default = [
-  User,
-  Pet
-]
-```
-
-```typescript
+> import { Model, Field, ForeignKeyField, ManyToManyField } from 'animal-orm';
+> import * as z from 'zod';
 > const User = new Model('User', {
   name: new Field(z.string()),
   email: new Field(z.string().email()),
