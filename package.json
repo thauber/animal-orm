@@ -1,0 +1,37 @@
+{
+  "name": "animal-orm",
+  "version": "1.0.0",
+  "description": "A FaunaDB ORM called Animal",
+  "main": "./index.ts",
+  "types": "./index.ts",
+  "scripts": {
+    "test": "jest",
+    "build": "tsc"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thauber/animal-orm.git"
+  },
+  "keywords": [
+    "faunadb",
+    "orm",
+    "animal"
+  ],
+  "author": "Tony Hauber<thauber@gmai.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/thauber/animal-orm/issues"
+  },
+  "homepage": "https://github.com/thauber/animal-orm#readme",
+  "devDependencies": {
+    "@types/jest": "^26.0.15",
+    "@types/node": "^14.14.10",
+    "jest": "^26.6.3",
+    "ts-jest": "^26.4.4",
+    "typescript": "^4.1.2"
+  },
+  "dependencies": {
+    "faunadb": "^4.1.1",
+    "zod": "^3.11.6"
+  }
+}
