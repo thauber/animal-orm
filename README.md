@@ -63,20 +63,20 @@ Do(
   trainedPets: new ManyToManyRelationship(Pet, {reverse:"tricks"}})
 )
 > Trick.construct()
-q.Do(
-  q.CreateCollection({ name: 'Trick' }),
-  q.CreateIndex({
+Do(
+  CreateCollection({ name: 'Trick' }),
+  CreateIndex({
     name: 'TrainedPets_by_Trick',
-    source: q.Collection('TrickTrainedPet'),
+    source: Collection('TrickTrainedPet'),
     terms: [{ field: ['data', 'trick'] }],
     values: [
       { field: ['ts'], reverse: true },
       { field: ['data', 'pet'] }
     ]
   }),
-  q.CreateIndex({
+  CreateIndex({
     name: 'Tricks_by_TrainedPet',
-    source: q.Collection('TrickTrainedPet'),
+    source: Collection('TrickTrainedPet'),
     terms: [{ field: ['data', 'pet'] }],
     values: [
       { field: ['ts'], reverse: true },
@@ -85,28 +85,28 @@ q.Do(
   })
 );
 > Trick.query('1')
-q.Let({
-  ref: q.Ref(q.Collection('Trick'), '1'),
-  document: q.Get(q.Var('ref'))
+Let({
+  ref: Ref(Collection('Trick'), '1'),
+  document: Get(Var('ref'))
 }, {
-  name: q.Select(['data', 'name'], q.Var('document')),
-  trainedPets: q.Select(
+  name: Select(['data', 'name'], Var('document')),
+  trainedPets: Select(
     "data",
-    q.Map(
-      q.Paginate(q.Match(q.Index('TrainedPets_by_Trick'), q.Var('ref'))),
-      q.Lambda(
+    Map(
+      Paginate(Match(Index('TrainedPets_by_Trick'), Var('ref'))),
+      Lambda(
         'values', 
-        q.Let({
-          ref: q.Select(q.Subtract(q.Count(q.Var('values')), 1), q.Var('values')),
-          document: q.Get(q.Var('ref'))
+        Let({
+          ref: Select(Subtract(Count(Var('values')), 1), Var('values')),
+          document: Get(Var('ref'))
         }, {
-          name: q.Select(['data', 'name'], q.Var('document')),
-          owner: q.Let({
-            ref: q.Select(['data', 'owner'], q.Var('document')),
-            document: q.Get(q.Var('ref'))
+          name: Select(['data', 'name'], Var('document')),
+          owner: Let({
+            ref: Select(['data', 'owner'], Var('document')),
+            document: Get(Var('ref'))
           }, {
-            name: q.Select(['data', 'name'], q.Var('document')),
-            email: q.Select(['data', 'email'], q.Var('document'))
+            name: Select(['data', 'name'], Var('document')),
+            email: Select(['data', 'email'], Var('document'))
           })
         })
       )
