@@ -45,7 +45,7 @@ Do(
 
 > const Pet = new Model('Pet',
   name: new Field(z.string()),
-  owner: new Ref(User, {reverse:"pets"}) //Sets up the reverse index
+  owner: new RefField(User, {reverse:"pets"}) //Sets up the reverse index
 });
 > Pet.construct()
 Do(
