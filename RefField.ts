@@ -1,22 +1,19 @@
 import * as z from 'zod';
 import { query as q } from 'faunadb';
 import { Field, IndexValue, IndexedFieldOptions } from './Field';
-import { Model, ParseOptions } from './Model';
+import { EmittedFieldSchema, Model, ModelFieldSet, ParseOptions } from './Model';
 import { capitalize } from './utils';
 
-export class ForeignKeyField extends Field {
-  readonly model: Model;
+type EmitRelated<M extends ModelFieldSet, MM extends Model<M>> = MM['emit']
+
+export class RefField<M extends ModelFieldSet> extends Field<z.ZodString, z.ZodObject<EmittedFieldSchema<M>>> {
+  readonly model: Model<M>;
   readonly options: IndexedFieldOptions;
 
-  constructor(model:Model, options:IndexedFieldOptions) {
-    super(model.schema());
+  constructor(model:Model<M>, options:IndexedFieldOptions) {
+    super([z.string(), model.emit], options);
     this.model = model;
     this.options = options;
-
-  }
-
-  schema(options:ParseOptions) {
-    return this.model.schema(options)
   }
 
   construct(modelName: string, fieldName: string) {
@@ -41,11 +38,6 @@ export class ForeignKeyField extends Field {
   }
 
   query(fieldName: string) {
-    return q.Let({
-      ref: q.Select(['data', fieldName], q.Var('document'))
-    }, {
-      [fieldName]: q.Get(q.Var('ref'))
-    });
+    return this.model.zoo.dereference(q.Select(['data', fieldName], q.Var('document')));
   }
-
 }

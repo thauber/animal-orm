@@ -1,6 +1,5 @@
 import * as z from 'zod';
-import { query as q } from 'faunadb';
-import { ParseOptions } from './Model';
+import { Expr, query as q } from 'faunadb';
 
 export interface FieldOptions {
   hidden?: boolean;
@@ -18,22 +17,24 @@ export interface IndexValue {
   reverse?: boolean,
 }
 
-export class Field {
-  readonly _schema: z.ZodType<any,any>;
+export class Field<A extends z.ZodType, E extends z.ZodType = A > {
+  readonly admit: A;
+  readonly emit: E;
+  readonly _hidden: boolean;
+  readonly _tertiary: boolean;
   readonly singular: string;
   readonly options: FieldOptions;
 
-  constructor(schema: z.ZodType<any,any>, options: FieldOptions = {}) {
-    this._schema = schema;
+  constructor(schema: A | E | [A,E], options: FieldOptions = {}) {
+    this._tertiary = false;
+    this._hidden = options.hidden || false;
+    this.emit = Array.isArray(schema) ? schema[1] : schema as E; 
+    this.admit = Array.isArray(schema) ? schema[0] : schema as A;
     this.singular = options.singular || '';
     this.options = options;
   }
 
-  schema(options:ParseOptions = {}) {
-    return this._schema
-  }
-
-  query(modelName:string, fieldName: string) {
+  query(modelName:string, fieldName: string):Expr {
     return q.Select(['data', fieldName], q.Var('document'));
   }
 

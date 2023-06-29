@@ -2,37 +2,26 @@ import * as z from 'zod';
 import { Expr, query as q } from 'faunadb';
 import { Field, IndexedFieldOptions, IndexValue } from './Field';
 import { capitalize, depluralize } from './utils';
-import { Model, ParseOptions } from './Model';
+import { EmittedFieldSchema, Model, ModelFieldSet, ParseOptions } from './Model';
 
 
-export class ManyToManyField extends Field {
+
+type y = z.ZodTypeDef
+
+export class ManyToManyField<M extends ModelFieldSet> extends Field<z.ZodNever, z.ZodObject<EmittedFieldSchema<M>>> {
   readonly options: IndexedFieldOptions;
-  readonly model: Model;
+  readonly model: Model<M>;
 
-  constructor(model:Model, options: IndexedFieldOptions = {}) {
-    super(model.schema(), options);
+  constructor(model:Model<M>, options: IndexedFieldOptions = {}) {
+    super([z.never(),model.emit], options);
     this.model = model;
     this.options = options;
-  }
-
-  schema(options:ParseOptions = {}):z.ZodType<any>{
-    return this.model.schema(options)
   }
 
   query(modelName: string, fieldName: string):Expr {
     const indexName = `${capitalize(fieldName)}_by_${modelName}`;
 
-    return q.Select(
-      "data",
-      q.Map(
-        q.Paginate(q.Match(q.Index(indexName), q.Var('ref'))),
-        q.Lambda(
-          'values', 
-          this.model.dereference(
-            q.Select(q.Subtract(q.Count(q.Var('values')), 1), q.Var('values')))
-          )
-      )
-    )
+    return this.model.zoo.paginateQuery(indexName)
   }
 
   construct(modelName: string, fieldName: string) {

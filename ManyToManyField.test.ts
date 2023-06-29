@@ -5,23 +5,22 @@ import { Field, IndexedFieldOptions } from './Field';
 import * as z from 'zod';
 
 // Mocking your Model class
-class MockModel extends Model {
-  schema(options:ParseOptions) {
-    return z.string();
-  }
+const fields = { email: new Field(z.string()) }
+const originalEnv = { ...process.env };
 
-  dereference(ref:Expr) {
-    return q.Get(ref);
-  }
-}
 
 describe('ManyToManyField', () => {
-  let model:MockModel;
-  let field: ManyToManyField;
+  let model:Model<typeof fields>;
+  let field: ManyToManyField<typeof fields>;
   let options: IndexedFieldOptions;
 
   beforeEach(() => {
-    model = new MockModel('User', { email: new Field(z.string()) });
+    jest.resetModules();
+    process.env = {
+      ...originalEnv,
+      FAUNADB_SECRET_KEY: 'secret',
+    };
+    model = new Model('User', { email: new Field(z.string()) });
     options = {
       reverse: 'jobs',
       sort: ['-ts']
@@ -33,17 +32,7 @@ describe('ManyToManyField', () => {
     it('returns a valid FQL query', () => {
       const query = field.query('Job', 'volunteers');
       expect(query).toEqual(
-        q.Select(
-          "data",
-          q.Map(
-            q.Paginate(q.Match(q.Index('Volunteers_by_Job'), q.Var('ref'))),
-            q.Lambda(
-              'values', 
-              model.dereference(
-                q.Select(q.Subtract(q.Count(q.Var('values')), 1), q.Var('values')))
-              )
-          )
-        )
+        model.zoo.paginateQuery('Volunteers_by_Job')
       );
     });
   });
@@ -68,13 +57,6 @@ describe('ManyToManyField', () => {
           values: [{ field: ['ts'], reverse: true }, { field: ['data', 'job'] }]
         })
       );
-    });
-  });
-
-  describe('schema', () => {
-    it('returns model schema', () => {
-      const schema = field.schema();
-      expect(typeof schema).toEqual(typeof z.string());
     });
   });
 });

@@ -1,43 +1,36 @@
-import { ForeignKeyField } from './ForeignKeyField';
+import { RefField } from './RefField';
 import { Field, IndexedFieldOptions } from './Field';
 import { Expr, query as q } from 'faunadb';
 import * as z from 'zod';
-import { Model, ParseOptions } from './Model';
+import { Model } from './Model';
 
-// Mocking your Model class
-class MockModel extends Model {
-  schema(options:ParseOptions) {
-    return z.string();
-  }
+const fields = { email: new Field(z.string()) }
+const originalEnv = { ...process.env };
 
-  dereference(ref:Expr) {
-    return q.Get(ref);
-  }
-}
-
-describe('ForeignKeyField', () => {
-  let field: ForeignKeyField;
+describe('RefField', () => {
+  let field: RefField<typeof fields>;
   let options: IndexedFieldOptions;
-  let model: Model;
+  let model: Model<typeof fields>;
 
   beforeEach(() => {
+    jest.resetModules();
+    process.env = {
+      ...originalEnv,
+      FAUNADB_SECRET_KEY: 'secret',
+    };
     options = {
       reverse: 'adminJobs',
       sort: ['-ts']
     };
-    model = new MockModel('User', { email: new Field(z.string()) });
-    field = new ForeignKeyField(model, options);
+    model = new Model('User', fields);
+    field = new RefField(model, options);
   });
 
   describe('query', () => {
     it('returns a valid FQL query', () => {
       const query = field.query('testField');
       expect(query).toEqual(
-        q.Let({
-          ref: q.Select(['data', 'testField'], q.Var('document'))
-        }, {
-          testField: q.Get(q.Var('ref'))
-        })
+        model.zoo.dereference(q.Select(['data', 'testField'], q.Var('document')))
       );
     });
   });
@@ -57,7 +50,7 @@ describe('ForeignKeyField', () => {
     });
 
     it('returns an empty array when options.reverse is not provided', () => {
-      field = new ForeignKeyField(model, { sort: ['-ts'] });
+      field = new RefField(model, { sort: ['-ts'] });
       const constructs = field.construct('TestModel', 'testField');
       expect(constructs).toHaveLength(0);
     });

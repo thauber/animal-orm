@@ -1,6 +1,6 @@
 {
   "name": "animal-orm",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "A FaunaDB ORM called Animal",
   "main": "./index.ts",
   "types": "./index.ts",
@@ -31,7 +31,7 @@
     "typescript": "^4.1.2"
   },
   "dependencies": {
-    "faunadb": "^4.1.1",
+    "faunadb": "^4.8.0",
     "zod": "^3.11.6"
   }
 }
