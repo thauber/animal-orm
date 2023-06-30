@@ -1,43 +1,61 @@
 import * as z from 'zod';
-import { query as q } from 'faunadb';
+import { Expr, query as q } from 'faunadb';
 import { Field, IndexValue, IndexedFieldOptions } from './Field';
 import { EmittedFieldSchema, Model, ModelFieldSet, ParseOptions } from './Model';
-import { capitalize } from './utils';
+import { capitalize, depluralize } from './utils';
+import a from './helpers'
 
 type EmitRelated<M extends ModelFieldSet, MM extends Model<M>> = MM['emit']
 
-export class RefField<M extends ModelFieldSet> extends Field<z.ZodString, z.ZodObject<EmittedFieldSchema<M>>> {
+export class RefField<M extends ModelFieldSet> extends Field<z.ZodType<Expr>, z.ZodObject<EmittedFieldSchema<M>>> {
   readonly model: Model<M>;
   readonly options: IndexedFieldOptions;
 
-  constructor(model:Model<M>, options:IndexedFieldOptions) {
-    super([z.string(), model.emit], options);
+  constructor(model:Model<M>, options:IndexedFieldOptions = {}) {
+    super([a.ref(), model.emit], options);
     this.model = model;
     this.options = options;
   }
 
-  construct(modelName: string, fieldName: string) {
+  getReverseIndexName(fieldName: string) {
     if (this.options.reverse) {
-      const indexName = `${capitalize(this.options.reverse)}_by_${capitalize(fieldName)}`;
-      const values = (this.options.sort || []).map<IndexValue>(field => {
+      return `${this.options.reverse}_by_${fieldName}`
+    }
+    return null;
+  }
+
+  deconstruct(modelName: string, fieldName: string) {
+    const reverseIndexName = this.getReverseIndexName(fieldName)
+    if (reverseIndexName) {
+      return [
+        q.Delete(q.Index(reverseIndexName)),
+      ]
+    }
+    return [];
+  }
+
+  construct(modelName: string, fieldName: string):{indexes?: Expr[], tables?: Expr[]} {
+    const reverseIndexName = this.getReverseIndexName(fieldName)
+    if (reverseIndexName) {
+      const values = (this.options.sort || ['-ts']).map<IndexValue>(field => {
         const isReversed = field.startsWith('-');
         const fieldName = isReversed ? field.substring(1) : field;
         return { field: fieldName === 'ts' || fieldName === 'ref' ? [fieldName] : ['data', fieldName], reverse: isReversed };
       }).concat([{field: ['ref']}]);
 
-      return [
-      q.CreateIndex({
-        name: indexName,
-        source: q.Collection(modelName),
-        terms: [{ field: ['data', fieldName] }],
-        values: values,
-      }),
-      ];
+      return {indexes: [
+        q.CreateIndex({
+          name: reverseIndexName,
+          source: q.Collection(modelName),
+          terms: [{ field: ['data', fieldName] }],
+          values: values,
+        }),
+      ]};
     }
-    return [];
+    return {};
   }
 
-  query(fieldName: string) {
+  query(_modelName:string, fieldName: string) {
     return this.model.zoo.dereference(q.Select(['data', fieldName], q.Var('document')));
   }
 }

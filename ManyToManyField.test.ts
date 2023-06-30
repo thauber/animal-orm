@@ -40,18 +40,22 @@ describe('ManyToManyField', () => {
   describe('construct', () => {
     it('returns a valid FQL query for index creation', () => {
       const constructs = field.construct('Job', 'volunteers');
-      expect(constructs).toHaveLength(2);
-      expect(constructs[0]).toEqual(
+      expect(constructs.indexes||[]).toHaveLength(2);
+      expect(constructs.tables||[]).toHaveLength(1);
+      expect(constructs.tables[0]).toEqual(
+        q.CreateCollection({ name: 'JobVolunteer' })
+      );
+      expect(constructs.indexes[0]).toEqual(
         q.CreateIndex({
-          name: 'Volunteers_by_Job',
+          name: 'volunteers_by_job',
           source: q.Collection('JobVolunteer'),
           terms: [{ field: ['data', 'job'] }],
           values: [{ field: ['ts'], reverse: true }, { field: ['data', 'volunteer'] }]
         })
       );
-      expect(constructs[1]).toEqual(
+      expect(constructs.indexes[1]).toEqual(
         q.CreateIndex({
-          name: 'Jobs_by_Volunteer',
+          name: 'jobs_by_volunteer',
           source: q.Collection('JobVolunteer'),
           terms: [{ field: ['data', 'volunteer'] }],
           values: [{ field: ['ts'], reverse: true }, { field: ['data', 'job'] }]

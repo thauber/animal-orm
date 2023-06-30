@@ -38,7 +38,11 @@ export class Field<A extends z.ZodType, E extends z.ZodType = A > {
     return q.Select(['data', fieldName], q.Var('document'));
   }
 
-  construct(modelName: string, fieldName: string): any[] {
-    return []
+  deconstruct(modelName: string, fieldName: string): Expr[] {
+    return [];
+  };
+
+  construct(modelName: string, fieldName: string): {tables?: Expr[], indexes?: Expr[]} {
+    return {};
   };
 }
