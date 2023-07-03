@@ -7,16 +7,6 @@ export interface FieldOptions {
   singular?: string;
 }
 
-export interface IndexedFieldOptions extends FieldOptions {
-  sort?: string[];
-  reverse?: string;
-}
-
-export interface IndexValue {
-  field: string[],
-  reverse?: boolean,
-}
-
 export class Field<A extends z.ZodType, E extends z.ZodType = A > {
   readonly admit: A;
   readonly emit: E;

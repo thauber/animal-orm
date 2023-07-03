@@ -1,11 +1,20 @@
 import * as z from 'zod';
 import { Expr, query as q } from 'faunadb';
-import { Field, IndexValue, IndexedFieldOptions } from './Field';
+import { Field, FieldOptions } from './Field';
 import { EmittedFieldSchema, Model, ModelFieldSet, ParseOptions } from './Model';
-import { capitalize, depluralize } from './utils';
-import a from './helpers'
+import { capitalize } from './utils';
+import a from './a'
 
-type EmitRelated<M extends ModelFieldSet, MM extends Model<M>> = MM['emit']
+export interface IndexedFieldOptions extends FieldOptions {
+  sort?: string[];
+  reverse?: string;
+  reverseIndexName?: string;
+}
+
+export interface IndexValue {
+  field: string[],
+  reverse?: boolean,
+}
 
 export class RefField<M extends ModelFieldSet> extends Field<z.ZodType<Expr>, z.ZodObject<EmittedFieldSchema<M>>> {
   readonly model: Model<M>;
@@ -19,7 +28,7 @@ export class RefField<M extends ModelFieldSet> extends Field<z.ZodType<Expr>, z.
 
   getReverseIndexName(fieldName: string) {
     if (this.options.reverse) {
-      return `${this.options.reverse}_by_${fieldName}`
+      return this.options.reverseIndexName || `${this.options.reverse}_by_${fieldName}`
     }
     return null;
   }

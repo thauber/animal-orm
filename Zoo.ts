@@ -43,10 +43,11 @@ export class Zoo<M extends ModelFieldSet>{ readonly model: Model<M>; readonly cl
     });
   }
 
-  paginateQuery(index: string, terms: any[] = []) {
+  paginateQuery(index?: string, terms: any[] = []) {
+    const paginate = index ? q.Paginate(q.Match(q.Index(index), terms)) : q.Paginate(q.Documents(q.Collection(this.model.name)));
     return q.Select("data",
      q.Map(
-        q.Paginate(q.Match(q.Index(index), terms)),
+        paginate,
         q.Lambda('values',
           q.Let(
             {
@@ -59,7 +60,7 @@ export class Zoo<M extends ModelFieldSet>{ readonly model: Model<M>; readonly cl
     )
   }
 
-  async paginate(index: string, terms: any[] = []) {
+  async paginate(index?: string, terms: any[] = []) {
     const results = await this.client.query(this.paginateQuery(index, terms))
     return this.model.emit.array().parse(results)
   }

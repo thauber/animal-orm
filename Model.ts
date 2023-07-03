@@ -1,7 +1,7 @@
 import { Expr, query as q } from 'faunadb';
 import * as z from 'zod';
 import { Field } from './Field';
-import a from './helpers'
+import a from './a'
 import { Zoo } from './Zoo';
 
 export interface ParseOptions {

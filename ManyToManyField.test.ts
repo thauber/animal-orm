@@ -1,7 +1,7 @@
-import { ManyToManyField } from './ManyToManyField';
+import { ManyToManyField, ManyToManyFieldOptions } from './ManyToManyField';
 import { Expr, query as q } from 'faunadb';
 import { Model, ParseOptions } from './Model';
-import { Field, IndexedFieldOptions } from './Field';
+import { Field } from './Field';
 import * as z from 'zod';
 
 // Mocking your Model class
@@ -12,7 +12,7 @@ const originalEnv = { ...process.env };
 describe('ManyToManyField', () => {
   let model:Model<typeof fields>;
   let field: ManyToManyField<typeof fields>;
-  let options: IndexedFieldOptions;
+  let options: ManyToManyFieldOptions;
 
   beforeEach(() => {
     jest.resetModules();
@@ -30,35 +30,34 @@ describe('ManyToManyField', () => {
 
   describe('query', () => {
     it('returns a valid FQL query', () => {
-      const query = field.query('Job', 'volunteers');
+      const query = field.query('jobs', 'volunteers');
       expect(query).toEqual(
-        model.zoo.paginateQuery('Volunteers_by_Job')
+        model.zoo.paginateQuery('volunteers_by_jobs')
       );
     });
   });
 
   describe('construct', () => {
     it('returns a valid FQL query for index creation', () => {
-      const constructs = field.construct('Job', 'volunteers');
-      expect(constructs.indexes||[]).toHaveLength(2);
+      const constructs = field.construct('jobs', 'volunteers');      expect(constructs.indexes||[]).toHaveLength(2);
       expect(constructs.tables||[]).toHaveLength(1);
       expect(constructs.tables[0]).toEqual(
-        q.CreateCollection({ name: 'JobVolunteer' })
+        q.CreateCollection({ name: 'jobs_volunteers' })
       );
       expect(constructs.indexes[0]).toEqual(
         q.CreateIndex({
-          name: 'volunteers_by_job',
-          source: q.Collection('JobVolunteer'),
-          terms: [{ field: ['data', 'job'] }],
-          values: [{ field: ['ts'], reverse: true }, { field: ['data', 'volunteer'] }]
+          name: 'volunteers_by_jobs',
+          source: q.Collection('jobs_volunteers'),
+          terms: [{ field: ['data', 'jobs_ref'] }],
+          values: [{ field: ['ts'], reverse: true }, { field: ['data', 'volunteers_ref'] }]
         })
       );
       expect(constructs.indexes[1]).toEqual(
         q.CreateIndex({
-          name: 'jobs_by_volunteer',
-          source: q.Collection('JobVolunteer'),
-          terms: [{ field: ['data', 'volunteer'] }],
-          values: [{ field: ['ts'], reverse: true }, { field: ['data', 'job'] }]
+          name: 'jobs_by_volunteers',
+          source: q.Collection('jobs_volunteers'),
+          terms: [{ field: ['data', 'volunteers_ref'] }],
+          values: [{ field: ['ts'], reverse: true }, { field: ['data', 'jobs_ref'] }]
         })
       );
     });

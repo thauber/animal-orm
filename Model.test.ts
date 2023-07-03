@@ -2,7 +2,7 @@ import { Model, ParseOptions } from './Model';
 import { Field } from './Field';
 import * as z from 'zod';
 import { query as q, Expr } from 'faunadb';
-import a from './helpers'
+import a from './a'
 
 const mockRef = q.Ref(q.Collection('User'), 'id123')
 

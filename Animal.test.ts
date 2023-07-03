@@ -2,7 +2,7 @@ import { Client, query as q } from 'faunadb';
 import { Model } from './Model';
 import { Field } from './Field';
 import * as z from 'zod';
-import a from './helpers'
+import a from './a'
 import { RefField } from './RefField';
 import dotenv from "dotenv";
 import { emit } from 'process';
