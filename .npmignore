@@ -71,5 +71,3 @@ build/Release
 
 #mac folders
 .DS_Store
-
-/dist

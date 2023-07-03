@@ -1,10 +1,10 @@
 {
   "name": "animal-orm",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "A FaunaDB ORM called Animal",
   "type": "module",
-  "main": "./index.ts",
-  "types": "./index.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "scripts": {
     "test": "jest",
     "build": "tsc"
