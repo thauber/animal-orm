@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
-    "target": "es6",
-    "module": "ESNext",
+    "target": "es5",
+    "module": "commonjs",
     "lib": ["es2019", "DOM"],
     "strict": true,
     "esModuleInterop": true,
@@ -9,8 +9,7 @@
     "forceConsistentCasingInFileNames": true,
     "outDir": "./dist",
     "rootDir": "./src",
-    "moduleResolution": "node",
-    "declaration": true
+    "moduleResolution": "node"
   },
   "include": [
     "src/**/*.ts"
