@@ -3,11 +3,11 @@
   "version": "0.2.5",
   "description": "A FaunaDB ORM called Animal",
   "type": "module",
-  "main": "./dist/cjs/index.js",
+  "main": "./dist/cjs/index.cjs",
   "module": "./dist/ems/index.js",
   "types": "./dist/ems/index.d.ts",
   "scripts": {
-    "build:cjs": "tsc -p tsconfig.cjs.json",
+    "build:cjs": "tsc -p tsconfig.cjs.json && rename 's/.js$/.cjs/' dist/cjs/*.js",
     "build:esm": "tsc -p tsconfig.esm.json",
     "build": "npm run build:cjs && npm run build:esm",
     "test": "jest"
