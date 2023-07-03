@@ -1,5 +1,5 @@
-import { RefField } from './RefField';
-import { Field, IndexedFieldOptions } from './Field';
+import { RefField, IndexedFieldOptions } from './RefField';
+import { Field } from './Field';
 import { Expr, query as q } from 'faunadb';
 import * as z from 'zod';
 import { Model } from './Model';

@@ -15,11 +15,11 @@ let response:object = {
 };
 jest.mock('faunadb', () => ({
   ...jest.requireActual('faunadb'),
-  Client: ()=>({
+  Client: jest.fn().mockImplementation(()=>({
     query: jest.fn((...args) => {
       return response
     })
-  })
+  }))
 }))
 
 const originalEnv = { ...process.env };

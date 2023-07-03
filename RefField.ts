@@ -1,8 +1,7 @@
 import * as z from 'zod';
 import { Expr, query as q } from 'faunadb';
 import { Field, FieldOptions } from './Field';
-import { EmittedFieldSchema, Model, ModelFieldSet, ParseOptions } from './Model';
-import { capitalize } from './utils';
+import { EmittedFieldSchema, Model, ModelFieldSet } from './Model';
 import a from './a'
 
 export interface IndexedFieldOptions extends FieldOptions {
