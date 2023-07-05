@@ -1,15 +1,16 @@
 {
   "compilerOptions": {
-    "target": "es5",
-    "module": "commonjs",
     "lib": ["es2019", "DOM"],
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "outDir": "./dist",
     "rootDir": "./src",
-    "moduleResolution": "node"
+    "moduleResolution": "node",
+    "module": "CommonJS",
+    "declarationDir": "./dist/types",
+    "outDir": "./dist/cjs",
+    "declaration": true
   },
   "include": [
     "src/**/*.ts"
