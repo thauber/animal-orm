@@ -51,7 +51,9 @@ export class Zoo<M extends ModelFieldSet>{ readonly model: Model<M>; readonly cl
         q.Lambda('values',
           q.Let(
             {
-              ref:q.Select(q.Subtract(q.Count(q.Var('values')), 1), q.Var('values'))
+              ref: index
+                ? q.Select(q.Subtract(q.Count(q.Var('values')), 1), q.Var('values'))
+                : q.Var('values')
             },
             this.dereference(q.Var('ref'))
           )

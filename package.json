@@ -1,14 +1,12 @@
 {
   "name": "animal-orm",
-  "version": "0.2.7",
+  "version": "0.2.9",
   "description": "A FaunaDB ORM called Animal",
   "type": "commonjs",
   "main": "./dist/cjs/index.js",
   "types": "./dist/types/index.d.ts",
   "scripts": {
-    "build:cjs": "tsc -p tsconfig.cjs.json && mv 's/.js$/.cjs/' dist/cjs/*.js",
-    "build:esm": "tsc -p tsconfig.esm.json",
-    "build": "npm run build:cjs && npm run build:esm",
+    "build": "webpack",
     "test": "jest"
   },
   "repository": {

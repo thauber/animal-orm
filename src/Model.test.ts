@@ -130,6 +130,28 @@ describe('Model', () => {
     });
 
     describe('.paginateQuery()', () => {
+      it('should return a default index for paginating results if no index is given', () => {
+        const query = model.zoo.paginateQuery();
+        const expected = q.Select("data",
+          q.Map(
+            q.Paginate(q.Documents(q.Collection(model.name))),
+            q.Lambda('values', q.Let(
+              { ref: q.Var('values') }, 
+              q.Let({
+                ref: q.Var('ref'),
+                document: q.Get(q.Var('ref'))
+              }, {
+                ref: q.Select(['ref'], q.Var('document')),
+                ts: q.Select(['ts'], q.Var('document')),
+                name: fields.name.query(model.name, 'name'),
+                password: fields.password.query(model.name, 'password'),
+                age: fields.age.query(model.name, 'age'),
+              })
+            )),
+          )
+        );
+        expect(query).toEqual(expected);
+      });
       it('should return a Select query for paginating results', () => {
         const query = model.zoo.paginateQuery('index123', ['term1', 'term2']);
         const expected = q.Select("data",

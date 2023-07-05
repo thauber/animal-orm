@@ -21,7 +21,7 @@ export default [
       extensions: ['.ts', '.js'],
     },
     output: {
-      filename: 'index.cjs',
+      filename: 'index.js',
       path: path.resolve(__dirname, 'dist', 'cjs'),
       libraryTarget: 'commonjs2',
     },
