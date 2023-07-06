@@ -28,11 +28,15 @@ describe('AnimalORM', () => {
     };
     client = new Client({secret: process.env.FAUNADB_SECRET_KEY as string})
   })
-  it('constructs and destruts properly', async () => {
+  it('constructs and destructs properly', async () => {
     const User = new Model('User', {
       email: new Field(z.string()),
       password: new Field([z.string(), a.hidden()]),
     });
+
+    const i = z.object({
+      email: z.string().optional(),
+    })
 
     const Job = new Model('Job', {
       title: new Field(z.string()),
@@ -49,6 +53,7 @@ describe('AnimalORM', () => {
   describe('Model', () => {
     const userFields = {
       email: new Field(z.string()),
+      name: new Field(z.string().optional()),
       password: new Field([z.string(), a.hidden()]),
     }
     const jobFields = {
@@ -72,17 +77,20 @@ describe('AnimalORM', () => {
       it('can create a new insatnce', async () => {
         const userData = {
           email: "tiger@example.com",
+          name: "Tony",
           password: "hello"
         } 
         const user = await User.zoo.create(userData)
         expect(user).toHaveProperty("ref")
         expect(user).toHaveProperty("ts")
         expect(user.email).toBe("tiger@example.com")
+        expect(user.name).toBe("Tony")
         expect(user.password).toBe(undefined)
       })
       it('can update an instance', async () => {
         const userData = {
           email: "tiger@example.com",
+          name: "Tony",
           password: "hello",
         }
         const user = await User.zoo.create(userData)
@@ -92,16 +100,34 @@ describe('AnimalORM', () => {
         expect(updatedUser).toEqual({
           ref: user.ref,
           email: "tiger+test@example.com",
+          name: "Tony",
           password: undefined,
         })
       })
       it('can get an instance', async () => {
         const userData = {
           email: "unicorn@example.com",
+          name: "Tony",
           password: "hello",
         }
         const user = await User.zoo.create(userData)
-        //now delete the user
+        //now get the user
+        const retrievedUser = await User.zoo.get(user.ref)
+        expect(retrievedUser).toEqual({
+          ref: user.ref,
+          ts: user.ts,
+          email: "unicorn@example.com",
+          name: "Tony",
+          password: undefined,
+        })
+      })
+      it('can get an instance missing optional fields', async () => {
+        const userData = {
+          email: "unicorn@example.com",
+          password: "hello",
+        }
+        const user = await User.zoo.create(userData)
+        //now get the user
         const retrievedUser = await User.zoo.get(user.ref)
         expect(retrievedUser).toEqual({
           ref: user.ref,
@@ -109,11 +135,11 @@ describe('AnimalORM', () => {
           email: "unicorn@example.com",
           password: undefined,
         })
-
       })
       it('can delete an instance', async () => {
         const userData = {
           email: "tiger@example.com",
+          name: "Tony",
           password: "hello",
         }
         const user = await User.zoo.create(userData)
@@ -130,11 +156,13 @@ describe('AnimalORM', () => {
       it('can create relationships', async () => {
         const userData = {
           email: "tiger@example.com",
+          name: "Tony",
           password: "hello",
         }
         const user = await User.zoo.create(userData)
         const jobData = {
           title: "Software Engineer",
+          name: "Tony",
           owner: user.ref,
         }
         //now create a job for the user
@@ -144,6 +172,7 @@ describe('AnimalORM', () => {
       it('can reverse relationships', async () => {
         const userData = {
           email: "tiger@example.com",
+          name: "Tony",
           password: "hello",
         }
 
@@ -151,6 +180,7 @@ describe('AnimalORM', () => {
         const user = await User.zoo.create(userData)
         const jobData = {
           title: "Software Engineer",
+          name: "Tony",
           owner: user.ref,
         }
 

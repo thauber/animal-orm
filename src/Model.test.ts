@@ -115,16 +115,28 @@ describe('Model', () => {
     describe('.dereference()', () => {
       it('should return a Let query with a ref and document', () => {
         const query = model.zoo.dereference(mockRef);
-        const expected = q.Let({
-          ref: mockRef,
-          document: q.Get(mockRef)
-        }, {
-          ref: q.Select(['ref'], q.Var('document')),
-          ts: q.Select(['ts'], q.Var('document')),
-          name: fields.name.query(model.name, 'name'),
-          password: fields.password.query(model.name, 'password'),
-          age: fields.age.query(model.name, 'age'),
-        });
+        const expected = q.Let(
+          {
+            ref: mockRef,
+            document: q.Get(mockRef)
+          },
+          q.Merge(
+            {
+              ref: q.Select(['ref'], q.Var('document')),
+              ts: q.Select(['ts'], q.Var('document')),
+              name: fields.name.query(model.name, 'name'),
+              password: fields.password.query(model.name, 'password'),
+              age: fields.age.query(model.name, 'age'),
+            },{
+              ref: ['ref'],
+              ts: ['ts'],
+              name: ['data', 'name'],
+              password: ['data', 'password'],
+              age: ['data', 'age'],
+            },
+            q.Lambda(['key', 'a', 'b'], q.If(q.ContainsPath(q.Var("b"), q.Var("document")), q.Var("a"), null))
+          )
+        );
         expect(query).toEqual(expected);
       });
     });
@@ -135,19 +147,14 @@ describe('Model', () => {
         const expected = q.Select("data",
           q.Map(
             q.Paginate(q.Documents(q.Collection(model.name))),
-            q.Lambda('values', q.Let(
-              { ref: q.Var('values') }, 
-              q.Let({
-                ref: q.Var('ref'),
-                document: q.Get(q.Var('ref'))
-              }, {
-                ref: q.Select(['ref'], q.Var('document')),
-                ts: q.Select(['ts'], q.Var('document')),
-                name: fields.name.query(model.name, 'name'),
-                password: fields.password.query(model.name, 'password'),
-                age: fields.age.query(model.name, 'age'),
-              })
-            )),
+            q.Lambda('values',
+              q.Let(
+                {
+                  ref: q.Var('values')
+                },
+                model.zoo.dereference(q.Var('ref'))
+              )
+            )
           )
         );
         expect(query).toEqual(expected);
@@ -159,16 +166,7 @@ describe('Model', () => {
             q.Paginate(q.Match(q.Index('index123'), ['term1', 'term2'])),
             q.Lambda('values', q.Let(
               { ref: q.Select(q.Subtract(q.Count(q.Var('values')), 1), q.Var('values')) },
-              q.Let({
-                ref: q.Var('ref'),
-                document: q.Get(q.Var('ref'))
-              }, {
-                ref: q.Select(['ref'], q.Var('document')),
-                ts: q.Select(['ts'], q.Var('document')),
-                name: fields.name.query(model.name, 'name'),
-                password: fields.password.query(model.name, 'password'),
-                age: fields.age.query(model.name, 'age'),
-              })
+              model.zoo.dereference(q.Var('ref'))
             )),
           )
         );
@@ -179,16 +177,7 @@ describe('Model', () => {
     describe('.getQuery()', () => {
       it('should return a dereference query for a specific id', () => {
         const query = model.zoo.getQuery(mockRef);
-        const expected = q.Let({
-          ref: mockRef, 
-          document: q.Get(mockRef)
-        }, {
-          name: fields.name.query(model.name, 'name'),
-          password: fields.password.query(model.name, 'password'),
-          age: fields.age.query(model.name, 'age'),
-          ref: q.Select(['ref'], q.Var('document')),
-          ts: q.Select(['ts'], q.Var('document')),
-        });
+        const expected = model.zoo.dereference(mockRef);
         expect(query).toEqual(expected);
       });
     });
@@ -217,21 +206,6 @@ describe('Model', () => {
         const expected = q.Delete(mockRef);
         expect(query).toEqual(expected);
       });
-    });
-
-    it('dereferences correctly', () => {
-      const ref: Expr = q.Ref(q.Collection('User'), '1234');
-      const result = model.zoo.dereference(ref);
-      expect(result).toEqual(q.Let({
-        ref: ref,
-        document: q.Get(ref),
-      }, {
-        ref: q.Select(['ref'], q.Var('document')),
-        ts: q.Select(['ts'], q.Var('document')),
-        name: q.Select(['data', 'name'], q.Var('document')),
-        age: q.Select(['data', 'age'], q.Var('document')),
-        password: q.Select(['data', 'password'], q.Var('document')),
-      }));
     });
 
     it('can create an instance of the model', async () => {

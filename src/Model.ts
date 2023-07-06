@@ -12,6 +12,9 @@ export interface ParseOptions {
 type OptionalPropertyNames<T> =
   { [K in keyof T]-?: ({} extends { [P in K]: T[K] } ? K : never) }[keyof T];
 
+type RequiredPropertyNames<T> =
+  { [K in keyof T]: ({} extends { [P in K]: T[K] } ? never : K) }[keyof T];
+
 type SpreadProperties<L, R, K extends keyof L & keyof R> =
   { [P in K]: L[P] | Exclude<R[P], undefined> };
 
@@ -24,7 +27,7 @@ type SpreadTwo<L, R> = Id<
   & SpreadProperties<L, R, OptionalPropertyNames<R> & keyof L>
 >;
 
-type Spread<A extends readonly [...any]> = A extends [infer L, ...infer R] ?
+export type Spread<A extends readonly [...any]> = A extends [infer L, ...infer R] ?
   SpreadTwo<L, Spread<R>> : unknown
 
 export interface ModelFieldSet extends Record<string, Field<any, any>> {}
@@ -33,11 +36,8 @@ export interface ModelZodSet extends Record<string, z.ZodTypeAny> {}
 export type AdmittedFieldSchema<M extends ModelFieldSet> = {[K in keyof M]:M[K]['admit']}
 export type EmittedFieldSchema<M extends ModelFieldSet> = Spread<[{[K in keyof M]:M[K]['emit']}, {ref: z.ZodType<Expr>, ts: z.ZodNumber}]>
 
-export type EmitRelated<M extends ModelFieldSet, MM extends Model<M>> = MM['emit']
-export type AdmitRelated<M extends ModelFieldSet, MM extends Model<M>> = MM['emit']
 
-export class Model<M extends ModelFieldSet> {
-  name: string;
+export class Model<M extends ModelFieldSet> { name: string;
   readonly fields: M;
   readonly zoo: Zoo<M>;
 

@@ -24,8 +24,9 @@ export class Field<A extends z.ZodType, E extends z.ZodType = A > {
     this.options = options;
   }
 
-  query(modelName:string, fieldName: string):Expr {
-    return q.Select(['data', fieldName], q.Var('document'));
+  query(_modelName:string, fieldName: string):Expr {
+    const path = ['data', fieldName]
+    return q.Select(path, q.Var('document'), null);
   }
 
   deconstruct(modelName: string, fieldName: string): Expr[] {
