@@ -3,6 +3,4 @@ export * from './Field';
 export * from './RefField';
 export * from './ManyToManyField';
 export * from './utils';
-import a from './a';
-
-export { a };
+export {default as a} from './a';
