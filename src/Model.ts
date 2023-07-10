@@ -36,6 +36,8 @@ export interface ModelZodSet extends Record<string, z.ZodTypeAny> {}
 export type AdmittedFieldSchema<M extends ModelFieldSet> = {[K in keyof M]:M[K]['admit']}
 export type EmittedFieldSchema<M extends ModelFieldSet> = Spread<[{[K in keyof M]:M[K]['emit']}, {ref: z.ZodType<Expr>, ts: z.ZodNumber}]>
 
+export type Admit<MM extends Model<any>> = MM extends Model<infer M> ? AdmittedFieldSchema<M> : never
+export type Instance<MM extends Model<any>> = MM extends Model<infer M> ? EmittedFieldSchema<M> : never
 
 export class Model<M extends ModelFieldSet> { name: string;
   readonly fields: M;
