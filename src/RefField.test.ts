@@ -30,14 +30,14 @@ describe('RefField', () => {
     it('returns a valid FQL query', () => {
       const query = field.query('_doesntMatter', 'testField');
       expect(query).toEqual(
-        model.zoo.dereference(q.Select(['data', 'testField'], q.Var('document')))
+        model.zoo.dereferenceQuery(q.Select(['data', 'testField'], q.Var('document')))
       );
     });
   });
 
   describe('construct', () => {
     it('returns a valid FQL query for index creation', () => {
-      const {indexes} = field.construct('Job', 'admin');
+      const indexes = field.index('Job', 'admin');
       expect(indexes).toHaveLength(1);
       expect(indexes && indexes[0]).toEqual(
         q.CreateIndex({
@@ -52,8 +52,9 @@ describe('RefField', () => {
     it('returns an empty array when options.reverse is not provided', () => {
       field = new RefField(model, { sort: ['-ts'] });
       const constructs = field.construct('TestModel', 'testField');
-      expect(constructs.indexes).toBeUndefined();
-      expect(constructs.tables).toBeUndefined();
+      expect(constructs).toHaveLength(0);
+      const indexes = field.index('TestModel', 'testField');
+      expect(indexes).toHaveLength(0);
     });
   });
 });

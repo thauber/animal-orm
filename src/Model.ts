@@ -34,7 +34,7 @@ export interface ModelFieldSet extends Record<string, Field<any, any>> {}
 export interface ModelZodSet extends Record<string, z.ZodTypeAny> {}
 
 export type AdmittedFieldSchema<M extends ModelFieldSet> = {[K in keyof M]:M[K]['admit']}
-export type EmittedFieldSchema<M extends ModelFieldSet> = Spread<[{[K in keyof M]:M[K]['emit']}, {ref: z.ZodType<Expr>, ts: z.ZodNumber}]>
+export type EmittedFieldSchema<M extends ModelFieldSet> = Spread<[{[K in keyof M]:M[K]['emit']}, {id: z.ZodString, ts: z.ZodNumber}]>
 
 export type Admit<MM extends Model<any>> = MM extends Model<infer M> ? AdmittedFieldSchema<M> : never
 export type Instance<MM extends Model<any>> = MM extends Model<infer M> ? EmittedFieldSchema<M> : never
@@ -59,31 +59,39 @@ export class Model<M extends ModelFieldSet> { name: string;
       }
     }
     queries.push(q.Delete(q.Collection(this.name)))
-    return q.Do(...queries);
+    return q.Do(queries);
+  }
+
+  index() {
+    const indexQueries:Expr[] = [];
+
+    for (const key in this.fields) {
+      const field = this.fields[key]
+      if (field instanceof Field) {
+        const indexes = field.index(this.name, key);
+        if (indexes) {
+          indexQueries.push(...indexes);
+        }
+      }
+    }
+    return q.Do(indexQueries)
   }
 
   construct() {
     const tableQueries:Expr[] = [];
-    const indexQueries:Expr[] = [];
 
     tableQueries.push(q.CreateCollection({ name: this.name }));
 
     for (const key in this.fields) {
       const field = this.fields[key]
       if (field instanceof Field) {
-        const {tables, indexes} = field.construct(this.name, key);
+        const tables = field.construct(this.name, key);
         if (tables) {
           tableQueries.push(...tables);
         }
-        if (indexes) {
-          indexQueries.push(...indexes);
-        }
       }
     }
-    return {
-      tables: tableQueries?.length && q.Do(...tableQueries),
-      indexes: indexQueries?.length && q.Do(...indexQueries),
-    };
+    return q.Do(tableQueries)
   }
 
   get emit() {
@@ -93,7 +101,7 @@ export class Model<M extends ModelFieldSet> { name: string;
           acc[key] = field.emit as z.ZodType
           return acc
         }, {}),
-        ref: a.ref(),
+        id: z.string(),
         ts: z.number(),
       } as unknown as EmittedFieldSchema<M>
     )

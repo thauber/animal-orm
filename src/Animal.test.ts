@@ -43,10 +43,8 @@ describe('AnimalORM', () => {
       owner: new RefField(User, {reverse: "jobs"}),
     })
 
-    const user = User.construct();
-    const job = Job.construct();
-    await client.query(q.Do( user.tables, job.tables ))
-    await client.query(q.Do( user.indexes, job.indexes ))
+    await client.query(q.Do( User.construct(), Job.construct() ))
+    await client.query(q.Do( User.index(), Job.index() ))
     await client.query(q.Do( Job.deconstruct(), User.deconstruct() ))
   })
 
@@ -69,8 +67,8 @@ describe('AnimalORM', () => {
 
       const user = User.construct();
       const job = Job.construct();
-      await client.query(q.Do( user.tables, job.tables ))
-      await client.query(q.Do( user.indexes, job.indexes ))
+      await client.query(q.Do( User.construct(), Job.construct() ))
+      await client.query(q.Do( User.index(), Job.index() ))
     })
 
     describe('.zoo', () => {
@@ -81,7 +79,7 @@ describe('AnimalORM', () => {
           password: "hello"
         } 
         const user = await User.zoo.create(userData)
-        expect(user).toHaveProperty("ref")
+        expect(user).toHaveProperty("id")
         expect(user).toHaveProperty("ts")
         expect(user.email).toBe("tiger@example.com")
         expect(user.name).toBe("Tony")
@@ -95,10 +93,10 @@ describe('AnimalORM', () => {
         }
         const user = await User.zoo.create(userData)
         //now update the user
-        const {ts, ...updatedUser} = await User.zoo.update(user.ref, {email: "tiger+test@example.com"})
+        const {ts, ...updatedUser} = await User.zoo.update(user.id, {email: "tiger+test@example.com"})
         expect(ts).toBeGreaterThan(user.ts)
         expect(updatedUser).toEqual({
-          ref: user.ref,
+          id: user.id,
           email: "tiger+test@example.com",
           name: "Tony",
           password: undefined,
@@ -112,9 +110,9 @@ describe('AnimalORM', () => {
         }
         const user = await User.zoo.create(userData)
         //now get the user
-        const retrievedUser = await User.zoo.get(user.ref)
+        const retrievedUser = await User.zoo.get(user.id)
         expect(retrievedUser).toEqual({
-          ref: user.ref,
+          id: user.id,
           ts: user.ts,
           email: "unicorn@example.com",
           name: "Tony",
@@ -128,9 +126,9 @@ describe('AnimalORM', () => {
         }
         const user = await User.zoo.create(userData)
         //now get the user
-        const retrievedUser = await User.zoo.get(user.ref)
+        const retrievedUser = await User.zoo.get(user.id)
         expect(retrievedUser).toEqual({
-          ref: user.ref,
+          id: user.id,
           ts: user.ts,
           email: "unicorn@example.com",
           password: undefined,
@@ -144,9 +142,9 @@ describe('AnimalORM', () => {
         }
         const user = await User.zoo.create(userData)
         //now delete the user
-        await User.zoo.delete(user.ref)
+        await User.zoo.delete(user.id)
         try {
-          await User.zoo.get(user.ref)
+          await User.zoo.get(user.id)
           //Should not get here
           expect(true).toBe(false)
         } catch (e) {
@@ -163,7 +161,7 @@ describe('AnimalORM', () => {
         const jobData = {
           title: "Software Engineer",
           name: "Tony",
-          owner: user.ref,
+          owner: user.id,
         }
         //now create a job for the user
         const job = await Job.zoo.create(jobData)
@@ -181,7 +179,7 @@ describe('AnimalORM', () => {
         const jobData = {
           title: "Software Engineer",
           name: "Tony",
-          owner: user.ref,
+          owner: user.id,
         }
 
         //now create a job for the user
@@ -191,12 +189,12 @@ describe('AnimalORM', () => {
         const reverse = Job.fields.owner.getReverseIndexName('owner')
         expect(reverse).toBe("jobs_by_owner")
         if (reverse) {
-          const jobs = await Job.zoo.paginate(reverse, [user.ref])
+          const jobs = await Job.zoo.paginate(reverse, [User.zoo.refFromId(user.id)])
           expect(jobs[0]).toEqual(job);
         }
       })
     });
-    afterEach(async  ()=> {
+    afterEach(async ()=> {
       await client.query(q.Do( Job.deconstruct(), User.deconstruct() ))
     })
 

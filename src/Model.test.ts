@@ -6,18 +6,38 @@ import a from './a'
 
 const mockRef = q.Ref(q.Collection('User'), 'id123')
 
-let response:object = {
+let selectResultMock:object = {
   name: 'john smith',
   age: 25,
   password: 'hello',
-  ref: mockRef,
+  id: 'id123',
   ts: 234123123123
 };
+
+let createResultMock:object = {
+  data: {
+    name: 'john smith',
+    age: 25,
+    password: 'hello',
+  },
+  ref: mockRef,
+  ts: 234123123123
+}
+
 jest.mock('faunadb', () => ({
   ...jest.requireActual('faunadb'),
   Client: jest.fn().mockImplementation(()=>({
-    query: jest.fn((...args) => {
-      return response
+    query: jest.fn((query:Expr) => {
+      const fql = query.toFQL()
+      if (fql.startsWith('Create')) {
+        return createResultMock;
+      } else if (fql.startsWith('Update')) {
+        return createResultMock;
+      } else if (fql.startsWith('Delete')) {
+        return {}
+      } else {
+        return selectResultMock;
+      }
     })
   }))
 }))
@@ -46,15 +66,15 @@ describe('Model', () => {
 
   it('constructs correctly', () => {
     const result = model.construct();
-    expect(result.tables).toEqual(q.Do(
+    expect(result).toEqual(q.Do(
       q.CreateCollection({ name: 'User' }),
     ));
   });
 
   it('creates the right schema while emitting', () => {
     const zodSchema = model.emit;
-    expect(zodSchema.safeParse(response).success).toBeTruthy();
-    expect(zodSchema.safeParse({...response, age:'25'}).success).toBeFalsy();
+    expect(zodSchema.safeParse(selectResultMock).success).toBeTruthy();
+    expect(zodSchema.safeParse({...selectResultMock, age:'25'}).success).toBeFalsy();
   });
 
   it('creates the right schema while admitting', () => {
@@ -72,7 +92,7 @@ describe('Model', () => {
       it('should call the query method with the paginateQuery result', async () => {
         const terms = ['term1', 'term2'];
         const query = model.zoo.paginateQuery('index123', terms);
-        ;(model.zoo.client.query as jest.Mock).mockResolvedValueOnce([response, response]);
+        ;(model.zoo.client.query as jest.Mock).mockResolvedValueOnce([selectResultMock, selectResultMock]);
         await model.zoo.paginate('index123', terms);
         expect(model.zoo.client.query).toHaveBeenCalledWith(query);
       });
@@ -80,8 +100,8 @@ describe('Model', () => {
 
     describe('.get()', () => {
       it('should call the query method with the getQuery result', async () => {
-        const query = model.zoo.getQuery(mockRef);
-        await model.zoo.get(mockRef);
+        const query = model.zoo.getQuery('id123');
+        await model.zoo.get('id123');
         expect(model.zoo.client.query).toHaveBeenCalledWith(query);
       });
     });
@@ -98,23 +118,23 @@ describe('Model', () => {
     describe('.update()', () => {
       it('should call the query method with the updateQuery result', async () => {
         const data = { name: 'John', password: 'pass123', age: 30 };
-        const query = model.zoo.updateQuery(mockRef, data);
-        await model.zoo.update(mockRef, data);
+        const query = model.zoo.updateQuery('id123', data);
+        await model.zoo.update('id123', data);
         expect(model.zoo.client.query).toHaveBeenCalledWith(query);
       });
     });
 
     describe('.delete()', () => {
       it('should call the query method with the deleteQuery result', async () => {
-        const query = model.zoo.deleteQuery(mockRef);
-        await model.zoo.delete(mockRef);
+        const query = model.zoo.deleteQuery('id123');
+        await model.zoo.delete('id123');
         expect(model.zoo.client.query).toHaveBeenCalledWith(query);
       });
     });
 
     describe('.dereference()', () => {
       it('should return a Let query with a ref and document', () => {
-        const query = model.zoo.dereference(mockRef);
+        const query = model.zoo.dereference('id123');
         const expected = q.Let(
           {
             ref: mockRef,
@@ -122,13 +142,13 @@ describe('Model', () => {
           },
           q.Merge(
             {
-              ref: q.Select(['ref'], q.Var('document')),
+              id: q.Select(['ref', 'id'], q.Var('document')),
               ts: q.Select(['ts'], q.Var('document')),
               name: fields.name.query(model.name, 'name'),
               password: fields.password.query(model.name, 'password'),
               age: fields.age.query(model.name, 'age'),
             },{
-              ref: ['ref'],
+              id: ['ref', 'id'],
               ts: ['ts'],
               name: ['data', 'name'],
               password: ['data', 'password'],
@@ -152,7 +172,7 @@ describe('Model', () => {
                 {
                   ref: q.Var('values')
                 },
-                model.zoo.dereference(q.Var('ref'))
+                model.zoo.dereferenceQuery(q.Var('ref'))
               )
             )
           )
@@ -166,7 +186,7 @@ describe('Model', () => {
             q.Paginate(q.Match(q.Index('index123'), ['term1', 'term2'])),
             q.Lambda('values', q.Let(
               { ref: q.Select(q.Subtract(q.Count(q.Var('values')), 1), q.Var('values')) },
-              model.zoo.dereference(q.Var('ref'))
+              model.zoo.dereferenceQuery(q.Var('ref'))
             )),
           )
         );
@@ -176,8 +196,8 @@ describe('Model', () => {
 
     describe('.getQuery()', () => {
       it('should return a dereference query for a specific id', () => {
-        const query = model.zoo.getQuery(mockRef);
-        const expected = model.zoo.dereference(mockRef);
+        const query = model.zoo.getQuery('id123');
+        const expected = model.zoo.dereference('id123');
         expect(query).toEqual(expected);
       });
     });
@@ -194,7 +214,7 @@ describe('Model', () => {
     describe('.updateQuery()', () => {
       it('should return an Update query with validated data', () => {
         const data = { name: 'John', password: 'pass123', age: 30 };
-        const query = model.zoo.updateQuery(mockRef, data);
+        const query = model.zoo.updateQuery('id123', data);
         const expected = q.Update(mockRef, { data });
         expect(query).toEqual(expected);
       });
@@ -202,7 +222,7 @@ describe('Model', () => {
 
     describe('.deleteQuery()', () => {
       it('should return a Delete query for a specific id', () => {
-        const query = model.zoo.deleteQuery(mockRef);
+        const query = model.zoo.deleteQuery('id123');
         const expected = q.Delete(mockRef);
         expect(query).toEqual(expected);
       });
@@ -215,15 +235,24 @@ describe('Model', () => {
         password: "hello",
       }
 
-      response = {
-        ...data,
+      createResultMock = {
+        data: data,
         ref: mockRef,
+        ts: 2113123123123,
+      }
+
+      selectResultMock = {
+        ...data,
+        id: 'id123',
         ts: 2113123123123,
       }
  
       const result = await model.zoo.create(data);
       expect(result).toEqual({
-        ...response,
+        name: "John Smith",
+        age: 25,
+        id: 'id123',
+        ts: 2113123123123,
         password: undefined,
       })
     });

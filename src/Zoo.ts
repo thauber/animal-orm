@@ -1,4 +1,4 @@
-import { Expr, query as q } from 'faunadb';
+import { Expr, query as q, values } from 'faunadb';
 import z, { objectUtil } from 'zod';
 import { Model, ModelFieldSet, Spread } from './Model';
 import { Client } from 'faunadb';
@@ -34,10 +34,11 @@ export class Zoo<M extends ModelFieldSet>{ readonly model: Model<M>; readonly cl
     });
   }
 
-  //TODO You need select the old way but default to null.
-  // This will work because we are checking the document contains
-  // the field otherwise not returning it.
-  dereference(ref: Expr) {
+  refFromId(id: string) {
+    return q.Ref(q.Collection(this.model.name), id);
+  }
+
+  dereferenceQuery(ref: Expr) {
     const subQueries = Object.entries(this.model.fields)
       .map<[string, Expr]>(([fieldName, field]) => [fieldName, field.query(this.model.name, fieldName)]);
 
@@ -50,18 +51,23 @@ export class Zoo<M extends ModelFieldSet>{ readonly model: Model<M>; readonly cl
       document: q.Get(ref)
     }, q.Merge(
         {
-          ref: q.Select(['ref'], q.Var('document')),
+          id: q.Select(['ref', 'id'], q.Var('document')),
           ts: q.Select(['ts'], q.Var('document')),
           ...Object.fromEntries(subQueries)
         },
         {
-          ref: ["ref"],
+          id: ["ref", "id"],
           ts: ["ts"],
           ...Object.fromEntries(subPaths)
         },
         q.Lambda(['key', 'a', 'b'], q.If(q.ContainsPath(q.Var("b"), q.Var("document")), q.Var("a"), null))
       )
     );
+  }
+
+  dereference(id: string) {
+    const ref = this.refFromId(id);
+    return this.dereferenceQuery(ref);
   }
 
   paginateQuery(index?: string, terms: any[] = []) {
@@ -76,7 +82,7 @@ export class Zoo<M extends ModelFieldSet>{ readonly model: Model<M>; readonly cl
                 ? q.Select(q.Subtract(q.Count(q.Var('values')), 1), q.Var('values'))
                 : q.Var('values')
             },
-            this.dereference(q.Var('ref'))
+            this.dereferenceQuery(q.Var('ref'))
           )
         ),
       )
@@ -88,12 +94,12 @@ export class Zoo<M extends ModelFieldSet>{ readonly model: Model<M>; readonly cl
     return this.model.emit.array().parse(results)
   }
 
-  getQuery(ref: Expr) {
-    return this.dereference(ref);
+  getQuery(id: string) {
+    return this.dereference(id);
   }
 
-  async get(ref: Expr) {
-    const instance = await this.client.query(this.getQuery(ref))
+  async get(id: string) {
+    const instance = await this.client.query(this.getQuery(id))
     return this.model.emit.parse(instance);
   }
 
@@ -103,25 +109,25 @@ export class Zoo<M extends ModelFieldSet>{ readonly model: Model<M>; readonly cl
   }
 
   async create(data:AdmittedFields<M>) {
-    const instance = await this.client.query(this.createQuery(data)) as {ref: Expr};
-    const dereferenced = await this.client.query(this.dereference(instance.ref));
+    const instance = await this.client.query(this.createQuery(data)) as {ref: values.Ref};
+    const dereferenced = await this.client.query(this.dereference(instance.ref.id));
     return this.model.emit.parse(dereferenced);
   }
 
-  updateQuery(ref: Expr, data:Partial<AdmittedFields<M>>) {
+  updateQuery(id: string, data:Partial<AdmittedFields<M>>) {
     const validated = this.model.admit.partial().parse(data);
-    return q.Update(ref, { data: validated });
+    return q.Update(this.refFromId(id), { data: validated });
   }
 
-  async update(ref: Expr, data:Partial<AdmittedFields<M>>) {
-    await this.client.query(this.updateQuery(ref, data));
-    return this.model.emit.parse(await this.client.query(this.dereference(ref)));
+  async update(id: string, data:Partial<AdmittedFields<M>>) {
+    await this.client.query(this.updateQuery(id, data));
+    return this.model.emit.parse(await this.client.query(this.dereference(id)));
   }
 
-  deleteQuery(ref: Expr) {
-    return q.Delete(ref);
+  deleteQuery(id: string) {
+    return q.Delete(this.refFromId(id));
   }
-  async delete(ref: Expr):Promise<void> {
-    await this.client.query(this.deleteQuery(ref));
+  async delete(id: string):Promise<void> {
+    await this.client.query(this.deleteQuery(id));
   }
 }

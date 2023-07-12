@@ -2,7 +2,6 @@ import * as z from 'zod';
 import { Expr, query as q } from 'faunadb';
 import { Field, FieldOptions } from './Field';
 import { EmittedFieldSchema, Model, ModelFieldSet } from './Model';
-import a from './a'
 
 export interface IndexedFieldOptions extends FieldOptions {
   sort?: string[];
@@ -15,12 +14,12 @@ export interface IndexValue {
   reverse?: boolean,
 }
 
-export class RefField<M extends ModelFieldSet> extends Field<z.ZodType<Expr>, z.ZodObject<EmittedFieldSchema<M>>> {
+export class RefField<M extends ModelFieldSet> extends Field<z.ZodEffects<z.ZodString, Expr, string>, z.ZodObject<EmittedFieldSchema<M>>> {
   readonly model: Model<M>;
   readonly options: IndexedFieldOptions;
 
   constructor(model:Model<M>, options:IndexedFieldOptions = {}) {
-    super([a.ref(), model.emit], options);
+    super([z.string().transform((id:string)=>model.zoo.refFromId(id)), model.emit], options);
     this.model = model;
     this.options = options;
   }
@@ -42,7 +41,7 @@ export class RefField<M extends ModelFieldSet> extends Field<z.ZodType<Expr>, z.
     return [];
   }
 
-  construct(modelName: string, fieldName: string):{indexes?: Expr[], tables?: Expr[]} {
+  index(modelName: string, fieldName: string) {
     const reverseIndexName = this.getReverseIndexName(fieldName)
     if (reverseIndexName) {
       const values = (this.options.sort || ['-ts']).map<IndexValue>(field => {
@@ -51,19 +50,19 @@ export class RefField<M extends ModelFieldSet> extends Field<z.ZodType<Expr>, z.
         return { field: fieldName === 'ts' || fieldName === 'ref' ? [fieldName] : ['data', fieldName], reverse: isReversed };
       }).concat([{field: ['ref']}]);
 
-      return {indexes: [
+      return [
         q.CreateIndex({
           name: reverseIndexName,
           source: q.Collection(modelName),
           terms: [{ field: ['data', fieldName] }],
           values: values,
         }),
-      ]};
+      ];
     }
-    return {};
+    return []
   }
 
   query(_modelName:string, fieldName: string) {
-    return this.model.zoo.dereference(q.Select(['data', fieldName], q.Var('document')));
+    return this.model.zoo.dereferenceQuery(q.Select(['data', fieldName], q.Var('document')));
   }
 }

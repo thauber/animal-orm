@@ -33,7 +33,11 @@ export class Field<A extends z.ZodType, E extends z.ZodType = A > {
     return [];
   };
 
-  construct(modelName: string, fieldName: string): {tables?: Expr[], indexes?: Expr[]} {
-    return {};
+  index(modelName:string, fieldName:string): Expr[] {
+    return [];
+  }
+
+  construct(modelName: string, fieldName: string): Expr[] {
+    return [];
   };
 }

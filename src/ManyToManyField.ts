@@ -52,19 +52,14 @@ export class ManyToManyField<M extends ModelFieldSet> extends Field<z.ZodNever, 
     return queries
   }
 
-  construct(modelName: string, fieldName: string) {
+  index(modelName: string, fieldName: string) {
     const tertiaryTable = this.getTertiaryTableName(modelName, fieldName)
-
-    //Create the value tuples base on the sorting options
     const values = (this.options.sort || ['ts']).map<IndexValue>(field => {
       const isReversed = field.startsWith('-');
       const fieldName = isReversed ? field.substring(1) : field;
       return { field: fieldName === 'ts' || fieldName === 'ref' ? [fieldName] : ['data', fieldName], reverse: isReversed };
     });
 
-    const tables = [
-      q.CreateCollection({ name: tertiaryTable }),
-    ]
     const indexes = [
       q.CreateIndex({
         name: this.getForwardIndexName(modelName, fieldName),
@@ -81,6 +76,12 @@ export class ManyToManyField<M extends ModelFieldSet> extends Field<z.ZodNever, 
         values: values.concat([{ field: ['data', `${modelName}_ref`] }]),
       }));
     }
-    return {tables, indexes}
+    return indexes
+  }
+
+  construct(modelName: string, fieldName: string) {
+    return [
+      q.CreateCollection({ name: this.getTertiaryTableName(modelName, fieldName) }),
+    ]
   }
 }
