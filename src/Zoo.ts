@@ -1,6 +1,6 @@
 import { Expr, query as q, values } from 'faunadb';
 import z, { objectUtil } from 'zod';
-import { Model, ModelFieldSet, Spread } from './Model';
+import { Model, ModelFieldSet } from './Model';
 import { Client } from 'faunadb';
 
 export default {
@@ -13,12 +13,6 @@ export default {
     })
   },
 }
-
-// type AdmittedField<M extends ModelFieldSet, K extends keyof M> = M[K]['admit'] extends z.ZodType<infer T> ? T : never
-// type AdmittedOptionFields<M extends ModelFieldSet> = {[K in keyof M as M[K]['admit'] extends z.ZodOptional<any> ? K : never]-?: AdmittedField<M, K>}
-// type AdmittedRequiredFields<M extends ModelFieldSet> = {[K in keyof M as M[K]['admit'] extends z.ZodOptional<any> ? never : K]: AdmittedField<M, K>}
-
-// type AdmittedFields<M extends ModelFieldSet> = Spread<[AdmittedOptionFields<M>, AdmittedRequiredFields<M>]>
 
 type AdmittedFields<M extends ModelFieldSet> = objectUtil.addQuestionMarks<{[K in keyof M]:M[K]['admit'] extends z.ZodType<infer T> ? T : never}>
 
@@ -70,6 +64,25 @@ export class Zoo<M extends ModelFieldSet>{ readonly model: Model<M>; readonly cl
     return this.dereferenceQuery(ref);
   }
 
+  async getBy<T extends keyof M>(fieldName: T, term: M[T]['admit'] extends z.ZodType<infer T> ? T : never) {
+    const field = this.model.fields[fieldName];
+    if (!field.options.unique) {
+      throw new Error(`Cannot get by non-unique field ${fieldName as string}`)
+    }
+    const index = field.getIndexName(this.model.name, fieldName as string);
+    const page = await this.paginate(index, [term])
+    return page[0];
+  }
+
+  async paginateBy<T extends keyof M>(fieldName: T, term: M[T]['admit'] extends z.ZodType<infer T> ? T : never) {
+    const field = this.model.fields[fieldName];
+    if (field.options.unique) {
+      throw new Error(`Cannot paginate by unique field ${fieldName as string}`)
+    }
+    const index = field.getIndexName(this.model.name, fieldName as string);
+    return this.paginate(index, [term]);
+  }
+  
   paginateQuery(index?: string, terms: any[] = []) {
     const paginate = index ? q.Paginate(q.Match(q.Index(index), terms)) : q.Paginate(q.Documents(q.Collection(this.model.name)));
     return q.Select("data",
@@ -79,8 +92,8 @@ export class Zoo<M extends ModelFieldSet>{ readonly model: Model<M>; readonly cl
           q.Let(
             {
               ref: index
-                ? q.Select(q.Subtract(q.Count(q.Var('values')), 1), q.Var('values'))
-                : q.Var('values')
+              ? q.Select(q.Subtract(q.Count(q.Var('values')), 1), q.Var('values'))
+              : q.Var('values')
             },
             this.dereferenceQuery(q.Var('ref'))
           )

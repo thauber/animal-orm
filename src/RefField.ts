@@ -2,16 +2,13 @@ import * as z from 'zod';
 import { Expr, query as q } from 'faunadb';
 import { Field, FieldOptions } from './Field';
 import { EmittedFieldSchema, Model, ModelFieldSet } from './Model';
+import { IndexValue } from './Field';
+import { sortToValues } from './utils';
 
 export interface IndexedFieldOptions extends FieldOptions {
   sort?: string[];
   reverse?: string;
   reverseIndexName?: string;
-}
-
-export interface IndexValue {
-  field: string[],
-  reverse?: boolean,
 }
 
 export class RefField<M extends ModelFieldSet> extends Field<z.ZodEffects<z.ZodString, Expr, string>, z.ZodObject<EmittedFieldSchema<M>>> {
@@ -44,11 +41,7 @@ export class RefField<M extends ModelFieldSet> extends Field<z.ZodEffects<z.ZodS
   index(modelName: string, fieldName: string) {
     const reverseIndexName = this.getReverseIndexName(fieldName)
     if (reverseIndexName) {
-      const values = (this.options.sort || ['-ts']).map<IndexValue>(field => {
-        const isReversed = field.startsWith('-');
-        const fieldName = isReversed ? field.substring(1) : field;
-        return { field: fieldName === 'ts' || fieldName === 'ref' ? [fieldName] : ['data', fieldName], reverse: isReversed };
-      }).concat([{field: ['ref']}]);
+      const values = sortToValues(this.options.sort).concat([{field: ['ref']}]);
 
       return [
         q.CreateIndex({

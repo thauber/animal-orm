@@ -1,7 +1,7 @@
 import { Expr } from 'faunadb';
 import z from 'zod';
 
-const a = {
+export const animal = {
   hidden():z.ZodEffects<z.ZodAny, void, any> {
     return z.any().transform<void>((_a:any)=>{})
   },
@@ -13,4 +13,4 @@ const a = {
   }
 }
 
-export default a
+export default animal

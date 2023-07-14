@@ -1,27 +1,33 @@
 import * as z from 'zod';
 import { Expr, query as q } from 'faunadb';
+import { sortToValues } from './utils';
 
-export interface FieldOptions {
-  hidden?: boolean;
-  coerce?: boolean;
-  singular?: string;
+export interface IndexValue {
+  field: string[],
+  reverse?: boolean,
 }
 
-export class Field<A extends z.ZodType, E extends z.ZodType = A > {
+export interface FieldOptions {
+  singular?: string;
+  unique?: boolean;
+  indexed?: boolean | string[];
+}
+
+export class Field<A extends z.ZodType<any>, E extends z.ZodType<any> = A > {
   readonly admit: A;
   readonly emit: E;
-  readonly _hidden: boolean;
-  readonly _tertiary: boolean;
   readonly singular: string;
   readonly options: FieldOptions;
 
   constructor(schema: A | E | [A,E], options: FieldOptions = {}) {
-    this._tertiary = false;
-    this._hidden = options.hidden || false;
     this.emit = Array.isArray(schema) ? schema[1] : schema as E; 
     this.admit = Array.isArray(schema) ? schema[0] : schema as A;
     this.singular = options.singular || '';
     this.options = options;
+  }
+
+  getIndexName(modelName: string, fieldName: string) {
+    return `${modelName}_by_${fieldName}`
   }
 
   query(_modelName:string, fieldName: string):Expr {
@@ -34,7 +40,22 @@ export class Field<A extends z.ZodType, E extends z.ZodType = A > {
   };
 
   index(modelName:string, fieldName:string): Expr[] {
-    return [];
+    if (this.options.indexed || this.options.unique) {
+      let sort = ['-ts']
+      if (this.options.indexed && this.options.indexed !== true) {
+        sort = this.options.indexed
+      }
+      return [
+        q.CreateIndex({
+          name: this.getIndexName(modelName, fieldName),
+          source: q.Collection(modelName),
+          terms: [{ field: ['data', fieldName] }],
+          unique: !!this.options.unique,
+          values: sortToValues(sort).concat([{field: ['ref']}]),
+        })
+      ]
+    }
+    return []
   }
 
   construct(modelName: string, fieldName: string): Expr[] {

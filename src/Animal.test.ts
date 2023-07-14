@@ -119,6 +119,60 @@ describe('AnimalORM', () => {
           password: undefined,
         })
       })
+      describe("indexable fields", () => {
+        const fields = {
+          age: new Field(z.number()),
+          type: new Field(z.enum(["Dog", "Cat", "Fish"]), {indexed: true}),
+          name: new Field(z.string(), {indexed: ['-age']}),
+          tagNumber: new Field(z.number(), {unique: true}),
+        }
+        let Pet:Model<typeof fields>;
+        beforeEach(async () => {
+          Pet = new Model('pets', fields)
+          await client.query(Pet.construct())
+          await client.query(Pet.index())
+        })
+        afterEach(async () => {
+          await client.query(Pet.deconstruct())
+        })
+        it('can get an instance by index', async () => {
+          const pet = await Pet.zoo.create({age: 5, type: "Dog", name: "Fido", tagNumber: 12345})
+          const fetchedPet = await Pet.zoo.getBy('tagNumber', 12345)
+          expect(pet.id === fetchedPet.id)
+        })
+        it('fails to generate two of the same document if they share a unique property', async () => {
+          await Pet.zoo.create({age: 5, type: "Dog", name: "Fido", tagNumber: 12345})
+          try {
+            await Pet.zoo.create({age: 6, type: "Cat", name: "Tom", tagNumber: 12345})
+            expect(false)
+          } catch (e) {
+            expect((e as Error).message).toBe("instance not unique")
+          }
+
+        })
+        it('can paginate instances by index', async () => {
+          const fido = await Pet.zoo.create({age: 5, type: "Dog", name: "Fido", tagNumber: 12345})
+          const margaret = await Pet.zoo.create({age: 10, type: "Dog", name: "Margaret", tagNumber: 12346})
+          //Add one that shouldn't return in the paginate
+          await Pet.zoo.create({age: 2, type: "Cat", name: "Tom", tagNumber: 12347})
+          const fetchedPets = await Pet.zoo.paginateBy('type', "Dog")
+          expect(fetchedPets).toHaveLength(2)
+          //sorted by the default -ts so most recent first
+          expect(fetchedPets[0]).toEqual(margaret)
+          expect(fetchedPets[1]).toEqual(fido)
+        })
+        it('can paginate instances by index', async () => {
+          const older = await Pet.zoo.create({age: 15, type: "Dog", name: "Margaret", tagNumber: 12345})
+          const younger = await Pet.zoo.create({age: 10, type: "Dog", name: "Margaret", tagNumber: 12346})
+          //Add one that shouldn't return in the paginate
+          await Pet.zoo.create({age: 2, type: "Cat", name: "Tom", tagNumber: 12347})
+          const fetchedPets = await Pet.zoo.paginateBy('name', "Margaret")
+          expect(fetchedPets).toHaveLength(2)
+          //sorted by -age so oldest first
+          expect(fetchedPets[0]).toEqual(older)
+          expect(fetchedPets[1]).toEqual(younger)
+        })
+      })
       it('can get an instance missing optional fields', async () => {
         const userData = {
           email: "unicorn@example.com",

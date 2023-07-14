@@ -1,8 +1,8 @@
 import * as z from 'zod';
 import { Expr, query as q } from 'faunadb';
-import { IndexedFieldOptions, IndexValue } from './RefField';
-import { Field } from './Field';
-import { depluralize } from './utils';
+import { IndexedFieldOptions } from './RefField';
+import { Field, IndexValue } from './Field';
+import { depluralize, sortToValues } from './utils';
 import { EmittedFieldSchema, Model, ModelFieldSet, ParseOptions } from './Model';
 
 
@@ -54,11 +54,7 @@ export class ManyToManyField<M extends ModelFieldSet> extends Field<z.ZodNever, 
 
   index(modelName: string, fieldName: string) {
     const tertiaryTable = this.getTertiaryTableName(modelName, fieldName)
-    const values = (this.options.sort || ['ts']).map<IndexValue>(field => {
-      const isReversed = field.startsWith('-');
-      const fieldName = isReversed ? field.substring(1) : field;
-      return { field: fieldName === 'ts' || fieldName === 'ref' ? [fieldName] : ['data', fieldName], reverse: isReversed };
-    });
+    const values = sortToValues(this.options.sort)
 
     const indexes = [
       q.CreateIndex({

@@ -1,5 +1,5 @@
 import { Expr, query as q } from 'faunadb';
-import * as z from 'zod';
+import z, { objectUtil } from 'zod';
 import { Field } from './Field';
 import a from './a'
 import { Zoo } from './Zoo';
@@ -34,7 +34,7 @@ export interface ModelFieldSet extends Record<string, Field<any, any>> {}
 export interface ModelZodSet extends Record<string, z.ZodTypeAny> {}
 
 export type AdmittedFieldSchema<M extends ModelFieldSet> = {[K in keyof M]:M[K]['admit']}
-export type EmittedFieldSchema<M extends ModelFieldSet> = Spread<[{[K in keyof M]:M[K]['emit']}, {id: z.ZodString, ts: z.ZodNumber}]>
+export type EmittedFieldSchema<M extends ModelFieldSet> = Spread<[{[K in keyof M]:M[K]['emit']} & {ts: z.ZodNumber, id: z.ZodString}]>
 
 export type Admit<MM extends Model<any>> = MM extends Model<infer M> ? AdmittedFieldSchema<M> : never
 export type Instance<MM extends Model<any>> = MM extends Model<infer M> ? EmittedFieldSchema<M> : never
@@ -59,7 +59,7 @@ export class Model<M extends ModelFieldSet> { name: string;
       }
     }
     queries.push(q.Delete(q.Collection(this.name)))
-    return q.Do(queries);
+    return q.Do(...queries || []);
   }
 
   index() {
@@ -91,7 +91,7 @@ export class Model<M extends ModelFieldSet> { name: string;
         }
       }
     }
-    return q.Do(tableQueries)
+    return q.Do(...tableQueries || [])
   }
 
   get emit() {

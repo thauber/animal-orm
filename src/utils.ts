@@ -1,3 +1,5 @@
+import { IndexValue } from "./Field";
+
 export function capitalize(str: string): string {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
@@ -14,4 +16,12 @@ export function depluralize(str: string): string {
     return str.slice(0, -1);
   }
   return str;
+}
+
+export function sortToValues(sort: string[] | undefined): IndexValue[] {
+  return (sort || ['-ts']).map<IndexValue>(field => {
+    const isReversed = field.startsWith('-');
+    const fieldName = isReversed ? field.substring(1) : field;
+    return { field: (fieldName === 'ts' || fieldName === 'ref') ? [fieldName] : ['data', fieldName], reverse: isReversed };
+  })
 }
