@@ -1,7 +1,7 @@
 import * as z from 'zod';
 import { Expr, query as q } from 'faunadb';
 import { Field, FieldOptions } from './Field';
-import { EmittedFieldSchema, Model, ModelFieldSet } from './Model';
+import { EmittedFieldObject, EmittedFieldSchema, Model, ModelFieldSet } from './Model';
 import { IndexValue } from './Field';
 import { sortToValues } from './utils';
 
@@ -11,7 +11,7 @@ export interface IndexedFieldOptions extends FieldOptions {
   reverseIndexName?: string;
 }
 
-export class RefField<M extends ModelFieldSet> extends Field<z.ZodEffects<z.ZodString, Expr, string>, z.ZodObject<EmittedFieldSchema<M>>> {
+export class RefField<M extends ModelFieldSet> extends Field<z.ZodEffects<z.ZodString, Expr, string>, z.ZodObject<EmittedFieldSchema<M>, any, any, EmittedFieldObject<M, EmittedFieldSchema<M>>>> {
   readonly model: Model<M>;
   readonly options: IndexedFieldOptions;
 

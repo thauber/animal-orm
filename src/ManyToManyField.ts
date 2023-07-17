@@ -3,7 +3,7 @@ import { Expr, query as q } from 'faunadb';
 import { IndexedFieldOptions } from './RefField';
 import { Field, IndexValue } from './Field';
 import { depluralize, sortToValues } from './utils';
-import { EmittedFieldSchema, Model, ModelFieldSet, ParseOptions } from './Model';
+import { EmittedFieldObject, EmittedFieldSchema, Model, ModelFieldSet, ParseOptions } from './Model';
 
 
 export interface ManyToManyFieldOptions extends IndexedFieldOptions {
@@ -11,12 +11,12 @@ export interface ManyToManyFieldOptions extends IndexedFieldOptions {
   tertiaryTableName?: string;
 }
 
-export class ManyToManyField<M extends ModelFieldSet> extends Field<z.ZodNever, z.ZodObject<EmittedFieldSchema<M>>> {
+export class ManyToManyField<M extends ModelFieldSet> extends Field<z.ZodNever, z.ZodObject<EmittedFieldSchema<M>, any, any, EmittedFieldObject<M, EmittedFieldSchema<M>>>> {
   readonly options: ManyToManyFieldOptions;
   readonly model: Model<M>;
 
   constructor(model:Model<M>, options: ManyToManyFieldOptions = {}) {
-    super([z.never(),model.emit], options);
+    super([z.never(), model.emit], options);
     this.model = model;
     this.options = options;
   }
