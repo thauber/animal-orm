@@ -37,7 +37,11 @@ export class Zoo<M extends ModelFieldSet>{ readonly model: Model<M>; readonly cl
       .map<[string, Expr]>(([fieldName, field]) => [fieldName, field.query(this.model.name, fieldName)]);
 
     const subPaths = Object.entries(this.model.fields)
-      .map<[string, string[]]>(([fieldName, field]) => [fieldName, ["data", fieldName]]
+      // Basically we do field.path(fieldName) || ["ts"] to support related fields
+      // Related Fields exist in an index but not in the document itself
+      // Since we don't include the field if it's path can not be found we need to
+      // supply a path that will always be there if the Field doesn't have a path
+      .map<[string, string[]]>(([fieldName, field]) => [fieldName, field.path(fieldName) || ["ts"]]
     ); 
 
     return q.Let({

@@ -1,7 +1,7 @@
 import { Client, query as q } from 'faunadb';
 import { Model } from './Model';
 import { Field } from './Field';
-import * as z from 'zod';
+import { z } from 'zod';
 import a from './a'
 import { RefField } from './RefField';
 import dotenv from "dotenv";
@@ -65,8 +65,6 @@ describe('AnimalORM', () => {
       User = new Model('User', userFields);
       Job = new Model('Job', jobFields);
 
-      const user = User.construct();
-      const job = Job.construct();
       await client.query(q.Do( User.construct(), Job.construct() ))
       await client.query(q.Do( User.index(), Job.index() ))
     })
@@ -246,6 +244,34 @@ describe('AnimalORM', () => {
           const jobs = await Job.zoo.paginate(reverse, [User.zoo.refFromId(user.id)])
           expect(jobs[0]).toEqual(job);
         }
+      })
+      it('can reverse relationships', async () => {
+        const userData = {
+          email: "tiger@example.com",
+          name: "Tony",
+          password: "hello",
+        }
+
+        //create a user
+        const user = await User.zoo.create(userData)
+        const jobs = ["Software Engineer", "Product Manager", "Sales Associate"]
+        const otherJobData = {
+          name: "Tony",
+          owner: user.id,
+        }
+
+        //now create a job for the user
+        const otherJobs = await Promise.all(jobs.map(async (title) => {
+          return await Job.zoo.create({...otherJobData, title})
+        }))
+
+        //now create a reverse model
+        const JobUser = User.reverse(Job, {jobs: "owner"})
+        const ju = await JobUser.zoo.get(user.id)
+        expect(ju.jobs).toHaveLength(3)
+        ju.jobs.forEach((job) => {
+          expect(jobs).toContain(job.title)
+        })
       })
     });
     afterEach(async ()=> {

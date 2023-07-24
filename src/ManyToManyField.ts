@@ -1,9 +1,9 @@
 import * as z from 'zod';
 import { Expr, query as q } from 'faunadb';
 import { IndexedFieldOptions } from './RefField';
-import { Field, IndexValue } from './Field';
-import { depluralize, sortToValues } from './utils';
+import { sortToValues } from './utils';
 import { EmittedFieldObject, EmittedFieldSchema, Model, ModelFieldSet, ParseOptions } from './Model';
+import ReversibleField, { ReverseName } from './ReversibleField';
 
 
 export interface ManyToManyFieldOptions extends IndexedFieldOptions {
@@ -11,12 +11,12 @@ export interface ManyToManyFieldOptions extends IndexedFieldOptions {
   tertiaryTableName?: string;
 }
 
-export class ManyToManyField<M extends ModelFieldSet> extends Field<z.ZodNever, z.ZodObject<EmittedFieldSchema<M>, any, any, EmittedFieldObject<M, EmittedFieldSchema<M>>>> {
+  export class ManyToManyField<M extends ModelFieldSet> extends ReversibleField<z.ZodNever, z.ZodArray<z.ZodObject<EmittedFieldSchema<M>, any, any, EmittedFieldObject<M, EmittedFieldSchema<M>>>>, M> {
   readonly options: ManyToManyFieldOptions;
   readonly model: Model<M>;
 
   constructor(model:Model<M>, options: ManyToManyFieldOptions = {}) {
-    super([z.never(), model.emit], options);
+    super(model, [z.never(), z.array(model.emit)], options);
     this.model = model;
     this.options = options;
   }
@@ -31,13 +31,6 @@ export class ManyToManyField<M extends ModelFieldSet> extends Field<z.ZodNever, 
 
   getForwardIndexName(modelName: string, fieldName: string) {
     return this.options.forwardIndexName || `${fieldName}_by_${modelName}`;
-  }
-
-  getReverseIndexName(fieldName: string) {
-    if (this.options.reverse) {
-      return `${this.options.reverse}_by_${fieldName}`
-    }
-    return null;
   }
 
   deconstruct(modelName: string, fieldName: string) {

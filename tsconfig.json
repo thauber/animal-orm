@@ -15,7 +15,7 @@
   },
   "include": [
     "src/**/*.ts"
-, "src/.Field.test.ts", "src/.Reverse.ts"  ],
+  ],
   "exclude": [
     "node_modules",
     "**/*.spec.ts",

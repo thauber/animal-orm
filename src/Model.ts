@@ -1,34 +1,12 @@
 import { Expr, query as q } from 'faunadb';
-import z, { objectUtil } from 'zod';
+import z from 'zod';
 import { Field } from './Field';
-import a from './a'
 import { Zoo } from './Zoo';
 
 export interface ParseOptions {
   showHidden?: boolean;
   hideTertiaryRelations?: boolean;
 }
-
-type OptionalPropertyNames<T> =
-  { [K in keyof T]-?: ({} extends { [P in K]: T[K] } ? K : never) }[keyof T];
-
-type RequiredPropertyNames<T> =
-  { [K in keyof T]: ({} extends { [P in K]: T[K] } ? never : K) }[keyof T];
-
-type SpreadProperties<L, R, K extends keyof L & keyof R> =
-  { [P in K]: L[P] | Exclude<R[P], undefined> };
-
-type Id<T> = T extends infer U ? { [K in keyof U]: U[K] } : never
-
-type SpreadTwo<L, R> = Id<
-  & Pick<L, Exclude<keyof L, keyof R>>
-  & Pick<R, Exclude<keyof R, OptionalPropertyNames<R>>>
-  & Pick<R, Exclude<OptionalPropertyNames<R>, keyof L>>
-  & SpreadProperties<L, R, OptionalPropertyNames<R> & keyof L>
->;
-
-export type Spread<A extends readonly [...any]> = A extends [infer L, ...infer R] ?
-  SpreadTwo<L, Spread<R>> : unknown
 
 export interface ModelFieldSet extends Record<string, Field<any, any>> {}
 export interface ModelZodSet extends Record<string, z.ZodTypeAny> {}
@@ -40,7 +18,9 @@ export type EmittedFieldObject<M extends ModelFieldSet, E extends EmittedFieldSc
 export type Admit<MM extends Model<any>> = MM extends Model<infer M> ? AdmittedFieldSchema<M> : never
 export type Instance<MM extends Model<any>> = MM extends Model<infer M> ? EmittedFieldSchema<M> : never
 
-export class Model<M extends ModelFieldSet> { name: string;
+type ReversibleFields<R extends ModelFieldSet, M extends ModelFieldSet> = {[K in keyof R as R[K] extends ReversibleField<any, any, M> ? K : never]: R[K]}
+
+export class Model<M extends ModelFieldSet, B extends ModelFieldSet=M> { name: string;
   readonly fields: M;
   readonly zoo: Zoo<M>;
 
@@ -48,6 +28,15 @@ export class Model<M extends ModelFieldSet> { name: string;
     this.name = name;
     this.fields = fields;
     this.zoo = new Zoo(this);
+  }
+
+
+  reverse<R extends ModelFieldSet, T extends Record<string, keyof ReversibleFields<R,B>>>(model:Model<R>, reverses: T) {
+    const reveresedFields = Object.entries(reverses).reduce((acc, [fieldName, reversibleFieldName]) => {
+      const reversibleField = model.fields[reversibleFieldName] as unknown as ReversibleField<any, any, R>
+      return {...acc, [fieldName]: new ReverseField(model, reversibleFieldName as string, reversibleField)}
+    }, {}) as {[K in keyof T]:Field<z.ZodNever, z.ZodArray<Model<R>["emit"]>>}
+    return new ExtendedModel(this, reveresedFields);
   }
 
   deconstruct() {
@@ -117,4 +106,24 @@ export class Model<M extends ModelFieldSet> { name: string;
     );
   }
 
+}
+
+import ReversibleField from './ReversibleField';
+import { ReverseField } from './ReverseField';
+
+
+export class ExtendedModel<M extends ModelFieldSet, E extends ModelFieldSet, B extends ModelFieldSet> extends Model<M & E, B> {
+
+  constructor(extendedModel: Model<M, B>, extendedFields: E) {
+    const fields = {...extendedModel.fields, ...extendedFields};
+    super(extendedModel.name, fields);
+  }
+
+  deconstruct() {
+    return q.Do([])
+  }
+
+  construct() {
+    return q.Do([])
+  }
 }

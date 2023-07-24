@@ -30,8 +30,13 @@ export class Field<A extends z.ZodType<any>, E extends z.ZodType<any> = A > {
     return `${modelName}_by_${fieldName}`
   }
 
+  path(fieldName: string): string[] | null {
+    return ['data', fieldName];
+  }
+
   query(_modelName:string, fieldName: string):Expr {
-    const path = ['data', fieldName]
+    const path = this.path(fieldName)
+    if (path === null) throw(new Error(`Fields without paths must override query`))
     return q.Select(path, q.Var('document'), null);
   }
 
