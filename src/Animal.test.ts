@@ -122,6 +122,15 @@ describe('AnimalORM', () => {
           age: new Field(z.number()),
           type: new Field(z.enum(["Dog", "Cat", "Fish"]), {indexed: true}),
           name: new Field(z.string(), {indexed: ['-age']}),
+          tricks: new Field(
+            z.array(
+              z.object({
+                name: z.string(),
+                difficulty: z.number(),
+                isMastered: z.boolean(),
+              })
+            ).optional(),
+          ),
           tagNumber: new Field(z.number(), {unique: true}),
         }
         let Pet:Model<typeof fields>;
@@ -150,7 +159,7 @@ describe('AnimalORM', () => {
         })
         it('can paginate instances by index', async () => {
           const fido = await Pet.zoo.create({age: 5, type: "Dog", name: "Fido", tagNumber: 12345})
-          const margaret = await Pet.zoo.create({age: 10, type: "Dog", name: "Margaret", tagNumber: 12346})
+          const margaret = await Pet.zoo.create({age: 10, type: "Dog", name: "Margaret", tagNumber: 12346, tricks: [{name: "sit", difficulty: 1, isMastered: true}]})
           //Add one that shouldn't return in the paginate
           await Pet.zoo.create({age: 2, type: "Cat", name: "Tom", tagNumber: 12347})
           const fetchedPets = await Pet.zoo.paginateBy('type', "Dog")
@@ -158,6 +167,9 @@ describe('AnimalORM', () => {
           //sorted by the default -ts so most recent first
           expect(fetchedPets[0]).toEqual(margaret)
           expect(fetchedPets[1]).toEqual(fido)
+          if (margaret.tricks) {
+            console.log(margaret.tricks[0].difficulty)
+          }
         })
         it('can paginate instances by index', async () => {
           const older = await Pet.zoo.create({age: 15, type: "Dog", name: "Margaret", tagNumber: 12345})
