@@ -4,13 +4,13 @@ import ReversibleField from './ReversibleField';
 import { Field } from './Field';
 import { EmittedFieldObject, EmittedFieldSchema, Model, ModelFieldSet } from './Model';
 
-export class ReverseField<M extends ModelFieldSet> extends Field<z.ZodNever, z.ZodArray<z.ZodObject<EmittedFieldSchema<M>, any, any, EmittedFieldObject<M, EmittedFieldSchema<M>>>>> {
+export class ReverseField<M extends ModelFieldSet> extends Field<z.ZodUndefined, z.ZodArray<z.ZodObject<EmittedFieldSchema<M>, any, any, EmittedFieldObject<M, EmittedFieldSchema<M>>>>> {
   readonly model: Model<M>;
   readonly reversedField: ReversibleField<any, any, M>;
   readonly reversedFieldName: string;
 
   constructor(model:Model<M>, reversedFieldName: string, reversedField: ReversibleField<any, any, M>) {
-    super([z.never(), z.array(model.emit)]);
+    super([z.undefined(), z.array(model.emit)]);
     this.model = model;
     this.reversedField = reversedField;
     this.reversedFieldName = reversedFieldName;
