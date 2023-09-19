@@ -35,7 +35,7 @@ export class Model<M extends ModelFieldSet, B extends ModelFieldSet=M> { name: s
     const reveresedFields = Object.entries(reverses).reduce((acc, [fieldName, reversibleFieldName]) => {
       const reversibleField = model.fields[reversibleFieldName] as unknown as ReversibleField<any, any, R>
       return {...acc, [fieldName]: new ReverseField(model, reversibleFieldName as string, reversibleField)}
-    }, {}) as {[K in keyof T]:Field<z.ZodNever, z.ZodArray<Model<R>["emit"]>>}
+    }, {}) as {[K in keyof T]:Field<z.ZodUndefined, z.ZodArray<Model<R>["emit"]>>}
     return new ExtendedModel(this, reveresedFields);
   }
 
