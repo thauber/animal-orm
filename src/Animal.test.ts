@@ -285,7 +285,6 @@ describe('AnimalORM', () => {
           expect(jobs).toContain(job.title)
         })
 
-
         //Now create with a reverse model
         const JobUser2 = JobUser.zoo.create({
           email: "thauber@gmail.com",

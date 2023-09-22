@@ -4,7 +4,7 @@ import ReversibleField from './ReversibleField';
 import { Field } from './Field';
 import { EmittedFieldObject, EmittedFieldSchema, Model, ModelFieldSet } from './Model';
 
-export class ReverseField<M extends ModelFieldSet> extends Field<z.ZodUndefined, z.ZodArray<z.ZodObject<EmittedFieldSchema<M>, any, any, EmittedFieldObject<M, EmittedFieldSchema<M>>>>> {
+export class ReverseField<M extends ModelFieldSet> extends Field<z.ZodUndefined, z.ZodArray<z.ZodObject<EmittedFieldSchema<M>, any, any, EmittedFieldObject<M>>>> {
   readonly model: Model<M>;
   readonly reversedField: ReversibleField<any, any, M>;
   readonly reversedFieldName: string;

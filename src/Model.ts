@@ -13,10 +13,10 @@ export interface ModelZodSet extends Record<string, z.ZodTypeAny> {}
 
 export type AdmittedFieldSchema<M extends ModelFieldSet> = {[K in keyof M]:M[K]['admit']}
 export type EmittedFieldSchema<M extends ModelFieldSet> = {[K in keyof M]:M[K]['emit']} & {ts: z.ZodNumber, id: z.ZodString}
-export type EmittedFieldObject<M extends ModelFieldSet, E extends EmittedFieldSchema<M>> = { [K in keyof E]: E[K] extends z.ZodType<infer T> ? T : never }
+export type EmittedFieldObject<M extends ModelFieldSet> = { [K in keyof EmittedFieldSchema<M>]: EmittedFieldSchema<M>[K] extends z.ZodType<infer T> ? T : never }
 
 export type Admit<MM extends Model<any>> = MM extends Model<infer M> ? AdmittedFieldSchema<M> : never
-export type Instance<MM extends Model<any>> = MM extends Model<infer M> ? EmittedFieldSchema<M> : never
+export type One<MM extends Model<any>> = MM extends Model<infer M> ? EmittedFieldObject<M> : never
 
 type ReversibleFields<R extends ModelFieldSet, M extends ModelFieldSet> = {[K in keyof R as R[K] extends ReversibleField<any, any, M> ? K : never]: R[K]}
 

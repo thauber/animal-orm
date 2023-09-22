@@ -9,7 +9,7 @@ export interface IndexedFieldOptions extends ReversibleFieldOptions {
   sort?: string[];
 }
 
-export class RefField<M extends ModelFieldSet> extends ReversibleField<z.ZodEffects<z.ZodString, Expr, string>, z.ZodObject<EmittedFieldSchema<M>, any, any, EmittedFieldObject<M, EmittedFieldSchema<M>>>, M> {
+export class RefField<M extends ModelFieldSet> extends ReversibleField<z.ZodEffects<z.ZodString, Expr, string>, z.ZodObject<EmittedFieldSchema<M>, any, any, EmittedFieldObject<M>>, M> {
   readonly model: Model<M>;
   readonly options: IndexedFieldOptions;
 

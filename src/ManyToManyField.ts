@@ -11,7 +11,7 @@ export interface ManyToManyFieldOptions extends IndexedFieldOptions {
   tertiaryTableName?: string;
 }
 
-  export class ManyToManyField<M extends ModelFieldSet> extends ReversibleField<z.ZodNever, z.ZodArray<z.ZodObject<EmittedFieldSchema<M>, any, any, EmittedFieldObject<M, EmittedFieldSchema<M>>>>, M> {
+  export class ManyToManyField<M extends ModelFieldSet> extends ReversibleField<z.ZodNever, z.ZodArray<z.ZodObject<EmittedFieldSchema<M>, any, any, EmittedFieldObject<M>>>, M> {
   readonly options: ManyToManyFieldOptions;
   readonly model: Model<M>;
 

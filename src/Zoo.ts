@@ -1,6 +1,6 @@
 import { Expr, query as q, values } from 'faunadb';
 import z, { objectUtil } from 'zod';
-import { Model, ModelFieldSet } from './Model';
+import { Model, ModelFieldSet, EmittedFieldObject  } from './Model';
 import { Client } from 'faunadb';
 
 export default {
@@ -107,8 +107,8 @@ export class Zoo<M extends ModelFieldSet>{ readonly model: Model<M>; readonly cl
   }
 
   async paginate(index?: string, terms: any[] = []) {
-    const results = await this.client.query(this.paginateQuery(index, terms))
-    return this.model.emit.array().parse(results)
+    const results = await this.client.query(this.paginateQuery(index, terms));
+    return this.model.emit.array().parse(results) as EmittedFieldObject<M>[];
   }
 
   getQuery(id: string) {
@@ -117,7 +117,7 @@ export class Zoo<M extends ModelFieldSet>{ readonly model: Model<M>; readonly cl
 
   async get(id: string) {
     const instance = await this.client.query(this.getQuery(id))
-    return this.model.emit.parse(instance);
+    return this.model.emit.parse(instance) as EmittedFieldObject<M>;
   }
 
   createQuery(data:AdmittedFields<M>) {
@@ -128,7 +128,7 @@ export class Zoo<M extends ModelFieldSet>{ readonly model: Model<M>; readonly cl
   async create(data:AdmittedFields<M>) {
     const instance = await this.client.query(this.createQuery(data)) as {ref: values.Ref};
     const dereferenced = await this.client.query(this.dereference(instance.ref.id));
-    return this.model.emit.parse(dereferenced);
+    return this.model.emit.parse(dereferenced) as EmittedFieldObject<M>;
   }
 
   updateQuery(id: string, data:Partial<AdmittedFields<M>>) {
@@ -138,7 +138,7 @@ export class Zoo<M extends ModelFieldSet>{ readonly model: Model<M>; readonly cl
 
   async update(id: string, data:Partial<AdmittedFields<M>>) {
     await this.client.query(this.updateQuery(id, data));
-    return this.model.emit.parse(await this.client.query(this.dereference(id)));
+    return this.model.emit.parse(await this.client.query(this.dereference(id))) as EmittedFieldObject<M>;
   }
 
   deleteQuery(id: string) {
