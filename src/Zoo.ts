@@ -75,7 +75,10 @@ export class Zoo<M extends ModelFieldSet>{ readonly model: Model<M>; readonly cl
     }
     const index = field.getIndexName(this.model.name, fieldName as string);
     const page = await this.paginate(index, [term])
-    return page[0];
+    if (page.length > 1) {
+      return page[0];
+    }
+    return undefined;
   }
 
   async paginateBy<T extends keyof M>(fieldName: T, term: M[T]['admit'] extends z.ZodType<infer T> ? T : never) {

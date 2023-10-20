@@ -145,7 +145,15 @@ describe('AnimalORM', () => {
         it('can get an instance by index', async () => {
           const pet = await Pet.zoo.create({age: 5, type: "Dog", name: "Fido", tagNumber: 12345})
           const fetchedPet = await Pet.zoo.getBy('tagNumber', 12345)
-          expect(pet.id === fetchedPet.id)
+          expect(fetchedPet)
+          if (fetchedPet) {
+            expect(pet.id === fetchedPet.id)
+          }
+        })
+        it('can get undefined instance by index', async () => {
+          const pet = await Pet.zoo.create({age: 5, type: "Dog", name: "Fido", tagNumber: 12345})
+          const fetchedPet = await Pet.zoo.getBy('tagNumber', 54321)
+          expect(fetchedPet).toBe(undefined)
         })
         it('fails to generate two of the same document if they share a unique property', async () => {
           await Pet.zoo.create({age: 5, type: "Dog", name: "Fido", tagNumber: 12345})
