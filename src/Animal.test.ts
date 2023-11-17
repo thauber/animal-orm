@@ -232,12 +232,51 @@ describe('AnimalORM', () => {
         const user = await User.zoo.create(userData)
         const jobData = {
           title: "Software Engineer",
-          name: "Tony",
           owner: user.id,
         }
         //now create a job for the user
         const job = await Job.zoo.create(jobData)
         expect(job.owner).toEqual(user);
+      })
+      describe('optional relationships', () => {
+        const jobSlotFields = {
+          title: new Field(z.string()),
+          owner: new RefField.optional(new Model("User", userFields), {reverse: "jobSlots"}),
+        }
+        let JobSlot:Model<typeof jobSlotFields>;
+        beforeEach(async () => {
+          JobSlot = new Model('JobSlot', jobSlotFields)
+          await client.query(JobSlot.construct())
+          await client.query(JobSlot.index())
+        })
+        afterEach(async () => {
+          await client.query(JobSlot.deconstruct())
+        })
+        it('can create with optional relationships', async () => {
+          const userData = {
+            email: "tiger@example.com",
+            name: "Tony",
+            password: "hello",
+          }
+          const user = await User.zoo.create(userData)
+          const jobSlotData = {
+            title: "Software Engineer",
+            owner: user.id,
+          }
+          //now create a job for the user
+          const jobSlot = await JobSlot.zoo.create(jobSlotData)
+          JobSlot.admit.parse
+          expect(jobSlot.owner).toEqual(user);
+        })
+        it('can create missing optional relationships', async () => {
+          const jobSlotData = {
+            title: "Software Engineer",
+            name: "Tony",
+          }
+          //now create a job for the user
+          const jobSlot = await JobSlot.zoo.create(jobSlotData)
+          expect(jobSlot.owner).toEqual(undefined);
+        })
       })
       it('can reverse relationships', async () => {
         const userData = {
