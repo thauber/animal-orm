@@ -145,7 +145,7 @@ describe('AnimalORM', () => {
         it('can get an instance by index', async () => {
           const pet = await Pet.zoo.create({age: 5, type: "Dog", name: "Fido", tagNumber: 12345})
           const fetchedPet = await Pet.zoo.getBy('tagNumber', 12345)
-          expect(fetchedPet)
+          expect(fetchedPet).toBeDefined()
           if (fetchedPet) {
             expect(pet.id === fetchedPet.id)
           }

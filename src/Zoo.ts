@@ -75,7 +75,7 @@ export class Zoo<M extends ModelFieldSet>{ readonly model: Model<M>; readonly cl
     }
     const index = field.getIndexName(this.model.name, fieldName as string);
     const page = await this.paginate(index, [term])
-    if (page.length > 1) {
+    if (page.length > 0) {
       return page[0];
     }
     return undefined;
