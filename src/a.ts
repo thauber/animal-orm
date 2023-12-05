@@ -10,7 +10,8 @@ export const animal = {
     return z.custom<Expr>((value) => value instanceof Expr, {
       message: "Must be a FaunaDB Expr instance",
     })
-  }
+  },
+  ...z
 }
 
 export default animal

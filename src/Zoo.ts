@@ -74,7 +74,7 @@ export class Zoo<M extends ModelFieldSet>{ readonly model: Model<M>; readonly cl
       throw new Error(`Cannot get by non-unique field ${fieldName as string}`)
     }
     const index = field.getIndexName(this.model.name, fieldName as string);
-    const page = await this.paginate(index, [term])
+    const page = await this.paginate(index, [field.admit(term)])
     if (page.length > 0) {
       return page[0];
     }
@@ -87,7 +87,7 @@ export class Zoo<M extends ModelFieldSet>{ readonly model: Model<M>; readonly cl
       throw new Error(`Cannot paginate by unique field ${fieldName as string}`)
     }
     const index = field.getIndexName(this.model.name, fieldName as string);
-    return this.paginate(index, [term]);
+    return this.paginate(index, [field.admit(term)]);
   }
   
   paginateQuery(index?: string, terms: any[] = []) {

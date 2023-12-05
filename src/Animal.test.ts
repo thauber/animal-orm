@@ -40,7 +40,7 @@ describe('AnimalORM', () => {
 
     const Job = new Model('Job', {
       title: new Field(z.string()),
-      owner: new RefField(User, {reverse: "jobs"}),
+      owner: new RefField(User, {reverse: "jobs", indexed:true}),
     })
 
     await client.query(q.Do( User.construct(), Job.construct() ))
@@ -237,6 +237,29 @@ describe('AnimalORM', () => {
         //now create a job for the user
         const job = await Job.zoo.create(jobData)
         expect(job.owner).toEqual(user);
+      })
+      it('can paginageBy relationships', async () => {
+        const userData = {
+          email: "tiger@example.com",
+          name: "Tony",
+          password: "hello",
+        }
+        const user = await User.zoo.create(userData)
+        const jobData = {
+          title: "Software Engineer",
+          owner: user.id,
+        }
+        const job = await Job.zoo.create(jobData)
+        const jobData2 = {
+          title: "Electrical Engineer",
+          owner: user.id,
+        }
+        const job2 = await Job.zoo.create(jobData)
+        
+        const jobs = await Job.zoo.paginateBy('owner', user.id)
+        expect(jobs).toHaveLength(2)
+        expect(jobs[0]).toEqual(job);
+        expect(jobs[1]).toEqual(job2);
       })
       describe('optional relationships', () => {
         const jobSlotFields = {
