@@ -1,6 +1,6 @@
 {
   "name": "animal-orm",
-  "version": "0.2.31",
+  "version": "0.2.32",
   "description": "A FaunaDB ORM called Animal",
   "type": "commonjs",
   "main": "./dist/cjs/index.js",
