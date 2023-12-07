@@ -40,7 +40,7 @@ describe('AnimalORM', () => {
 
     const Job = new Model('Job', {
       title: new Field(z.string()),
-      owner: new RefField(User, {reverse: "jobs", indexed:true}),
+      owner: new RefField(User, {reverse: "jobs", indexed: true}),
     })
 
     await client.query(q.Do( User.construct(), Job.construct() ))
@@ -56,7 +56,7 @@ describe('AnimalORM', () => {
     }
     const jobFields = {
       title: new Field(z.string()),
-      owner: new RefField(new Model("User", userFields), {reverse: "jobs"}),
+      owner: new RefField(new Model("User", userFields), {reverse: "jobs", indexed: true}),
     }
 
     let User:Model<typeof userFields>;
@@ -254,12 +254,12 @@ describe('AnimalORM', () => {
           title: "Electrical Engineer",
           owner: user.id,
         }
-        const job2 = await Job.zoo.create(jobData)
+        const job2 = await Job.zoo.create(jobData2)
         
         const jobs = await Job.zoo.paginateBy('owner', user.id)
         expect(jobs).toHaveLength(2)
-        expect(jobs[0]).toEqual(job);
-        expect(jobs[1]).toEqual(job2);
+        expect(jobs[1]).toEqual(job);
+        expect(jobs[0]).toEqual(job2);
       })
       describe('optional relationships', () => {
         const jobSlotFields = {

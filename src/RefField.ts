@@ -30,20 +30,21 @@ class BaseRefField<A extends z.ZodTypeAny, E extends z.ZodTypeAny, M extends Mod
   }
 
   index(modelName: string, fieldName: string) {
+    const indexes = super.index(modelName, fieldName);
     if (typeof this.options.reverse === 'string') {
       const reverseIndexName = this.getReverseIndexName(fieldName)
       const values = sortToValues(this.options.sort).concat([{field: ['ref']}]);
 
-      return [
+      indexes.push(
         q.CreateIndex({
           name: reverseIndexName,
           source: q.Collection(modelName),
           terms: [{ field: ['data', fieldName] }],
           values: values,
         }),
-      ];
+      );
     }
-    return []
+    return indexes
   }
 
 }
