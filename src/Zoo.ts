@@ -14,7 +14,7 @@ export default {
   },
 }
 
-type AdmittedFields<M extends ModelFieldSet> = objectUtil.addQuestionMarks<{[K in keyof M]:M[K]['admit'] extends z.ZodType<infer T> ? T : never}>
+export type AdmittedFields<M extends ModelFieldSet> = objectUtil.addQuestionMarks<{[K in keyof M]:M[K]['admit'] extends z.ZodType<infer T> ? T : never}>
 
 export class Zoo<M extends ModelFieldSet>{ readonly model: Model<M>; readonly client: Client;
   constructor (model: Model <M>) {
