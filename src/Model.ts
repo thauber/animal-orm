@@ -12,24 +12,30 @@ export interface ModelFieldSet extends Record<string, Field<any, any>> {}
 export interface ModelZodSet extends Record<string, z.ZodTypeAny> {}
 
 export type AdmittedFieldSchema<M extends ModelFieldSet> = {[K in keyof M]:M[K]['admit']}
+export type AdmittedFieldObject<M extends ModelFieldSet> = { [K in keyof AdmittedFieldSchema<M>]: AdmittedFieldSchema<M>[K] extends z.ZodType<infer T> ? T : never }
 export type EmittedFieldSchema<M extends ModelFieldSet> = {[K in keyof M]:M[K]['emit']} & {ts: z.ZodNumber, id: z.ZodString}
 export type EmittedFieldObject<M extends ModelFieldSet> = { [K in keyof EmittedFieldSchema<M>]: EmittedFieldSchema<M>[K] extends z.ZodType<infer T> ? T : never }
 
-export type Admit<MM extends Model<any>> = MM extends Model<infer M> ? AdmittedFieldSchema<M> : never
+export type Admit<MM extends Model<any>> = MM extends Model<infer M> ? AdmittedFieldObject<M> : never
 export type One<MM extends Model<any>> = MM extends Model<infer M> ? EmittedFieldObject<M> : never
 
 type ReversibleFields<R extends ModelFieldSet, M extends ModelFieldSet> = {[K in keyof R as R[K] extends ReversibleField<any, any, M> ? K : never]: R[K]}
 
 export class Model<M extends ModelFieldSet, B extends ModelFieldSet=M> { name: string;
   readonly fields: M;
-  readonly zoo: Zoo<M>;
+  private _zoo: Zoo<M> | undefined;
 
   constructor(name: string, fields:M) {
     this.name = name;
     this.fields = fields;
-    this.zoo = new Zoo(this);
   }
 
+  get zoo():Zoo<M> {
+    if (!this._zoo) {
+      this._zoo = new Zoo(this);
+    }
+    return this._zoo;
+  }
 
   reverse<R extends ModelFieldSet, T extends Record<string, keyof ReversibleFields<R,B>>>(model:Model<R>, reverses: T) {
     const reveresedFields = Object.entries(reverses).reduce((acc, [fieldName, reversibleFieldName]) => {
